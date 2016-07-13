@@ -1,68 +1,58 @@
 (function() { 'use strict';
 
-    /**
-     * Node
-     */
-    var Node = (function () {
-        function Node(key) {
-            this.key = key;
-            this.parent = null;
-            this.leftChild = null;
-            this.rightChild = null;
-        }
-
-        Node.prototype = {
-            constructor: Node,
-
-            getKey: function () {
-                return this.key;
-            },
-
-            setParent: function (parent) {
-                this.parent = parent;
-                return this;
-            },
-
-            setLeftChild: function (leftChild) {
-                this.leftChild = leftChild;
-                return this;
-            },
-
-            setRightChild: function (rightChild) {
-                this.rightChild = rightChild;
-                return this;
-            },
-
-            getParent: function () {
-                return this.parent;
-            },
-
-            getLeftChild: function () {
-                return this.leftChild;
-            },
-
-            getRightChild: function () {
-                return this.rightChild;
-            }
-        };
-
-        return Node;
-    })();
-
-    /**
-     * Binary search tree
-     */
     var BST = (function () {
         function BST() {
             this.root = null;
         }
 
+        var Node = (function () {
+            function Node(key) {
+                this.key = key;
+                this.parent = null;
+                this.leftChild = null;
+                this.rightChild = null;
+            }
+
+            Node.prototype = {
+                constructor: Node,
+
+                getKey: function () {
+                    return this.key;
+                },
+
+                setParent: function (parent) {
+                    this.parent = parent;
+                    return this;
+                },
+
+                setLeftChild: function (leftChild) {
+                    this.leftChild = leftChild;
+                    return this;
+                },
+
+                setRightChild: function (rightChild) {
+                    this.rightChild = rightChild;
+                    return this;
+                },
+
+                getParent: function () {
+                    return this.parent;
+                },
+
+                getLeftChild: function () {
+                    return this.leftChild;
+                },
+
+                getRightChild: function () {
+                    return this.rightChild;
+                }
+            };
+
+            return Node;
+        })();
+
         BST.prototype = {
             constructor: BST,
-
-            setRoot: function (root) {
-                this.root = root;
-            },
 
             find: function (key) {
                 var node = this._getSelfOrParent(key, this.root);
@@ -112,43 +102,43 @@
             },
 
             inOrderTraversal: function () {
-                var nodes = [];
-                (function inOrderTraversal(node) {
+                function inOrderTraverse(node, nodes) {
                     if (node === null) {
                         return;
                     }
-                    inOrderTraversal(node.getLeftChild());
+                    inOrderTraverse(node.getLeftChild(), nodes);
                     nodes.push(node.getKey());
-                    inOrderTraversal(node.getRightChild());
-                })(this.root);
-                return nodes;
+                    inOrderTraverse(node.getRightChild(), nodes);
+                    return nodes;
+                }
+                return inOrderTraverse(this.root, []);
             },
 
             preOrderTraversal: function () {
-                var nodes = [];
-                (function preOrderTraversal (node) {
+                function preOrderTraverse(node, nodes) {
                     if (node === null) {
                         return;
                     }
                     nodes.push(node.getKey());
-                    preOrderTraversal(node.getLeftChild());
-                    preOrderTraversal(node.getRightChild());
-                })(this.root);
-                return nodes;
+                    preOrderTraverse(node.getLeftChild(), nodes);
+                    preOrderTraverse(node.getRightChild(), nodes);
+                    return nodes;
+                }
+                return preOrderTraverse(this.root, []);
             },
 
             postOrderTraversal: function () {
-                var nodes = [];
-                (function postOrderTraversal (node) {
+                function postOrderTraverse(node, nodes) {
                     if (node === null) {
                         return;
                     }
-                    postOrderTraversal(node.getLeftChild());
-                    postOrderTraversal(node.getRightChild());
+                    postOrderTraverse(node.getLeftChild(), nodes);
+                    postOrderTraverse(node.getRightChild(), nodes);
                     nodes.push(node.getKey());
-                })(this.root);
-                return nodes;
-            }
+                    return nodes;
+                }
+                return postOrderTraverse(this.root, []);
+            },
 
             rangeSearch: function (keyFrom, keyTo) {
                 var hits = [];
@@ -210,18 +200,26 @@
     })();
 
     ////////////////////////////////
-
-    var fs = require('fs');
-    var input = (process.argv.length === 3) ? process.argv[2] : '/dev/stdin';
-    
-    //var data = fs.readFileSync(input, 'utf8');
-    //var lines = data.match(/[^\r\n]+/g);
     
     var bst = new BST();
 
+    bst.insert(3);
+    bst.insert(1);
+    bst.insert(5);
+    bst.insert(2);
+    bst.insert(4);
 
-    console.log(bst.inOrderTraversal().join(' '));
-    console.log(bst.preOrderTraversal().join(' '));
-    console.log(bst.postOrderTraversal().join(' '));
+    console.log(bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
+    console.log(bst.preOrderTraversal().join(' ')); // 3 1 2 5 4
+    console.log(bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
+
+    console.log(bst.find(2).getKey()); // 2
+    console.log(bst.rangeSearch(2, 4).join(' ')); // 2 3 4
+
+    bst.delete(2);
+    bst.delete(4);
+
+    console.log(bst.find(2)); // null
+    console.log(bst.rangeSearch(2, 4).join(' ')); // 3
 
 })();

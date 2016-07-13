@@ -1,45 +1,62 @@
 (function () { 'use strict';
 
-    var StackNode = (function () {
-        function StackNode(key) {
-            this.key = key;
-            this.next = null;
-        }
-
-        StackNode.prototype = {
-            constructor: StackNode,
-
-            setNext: function (node) {
-                this.next = node;
-                return this;
-            },
-            
-            getNext: function () {
-                return this.next;
-            },
-
-            getKey: function () {
-                return this.key;
-            }
-        };
-
-        return StackNode;
-    })();
-
     var Stack = (function() {
         function Stack() {
             this.top = null;
             this.size = 0;
         }
 
+        var Node = (function () {
+            function Node(key) {
+                this.key = key;
+                this.next = null;
+            }
+
+            Node.prototype = {
+                constructor: Node,
+
+                setNext: function (node) {
+                    this.next = node;
+                    return this;
+                },
+
+                getNext: function () {
+                    return this.next;
+                },
+
+                getKey: function () {
+                    return this.key;
+                }
+            };
+
+            return Node;
+        })();
+
         Stack.prototype = {
             constructor: Stack,
 
+            /**
+             *
+             * Top              Top                Top           Top
+             *  |                |                  |             |
+             *  v                v                  v             v
+             *  O -> O   =>   O  O -> O   =>   O -> O -> O   =>   O -> O -> O
+             * 
+             */
             push: function (key) {
-                this.top = (new StackNode(key)).setNext(this.top);
+                this.top = (new Node(key)).setNext(this.top);
                 this.size++;
             },
 
+            /**
+             *
+             * Top                     Top                        Top
+             *  |                       |                          |
+             *  v                       v                          v
+             *  O -> O -> O   =>   O -> O -> O   =(implicitly)=>   O -> O
+             *
+             * Implicitly, ie. we won't have a way to get to the "removed" node
+             */
             pop: function () {
                 if (this.isEmpty()) {
                     return;

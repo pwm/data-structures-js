@@ -48,33 +48,37 @@
 
     var BT = (function () {
         function BT(data) {
-            this.root = this._buildTree(data);
+            this.root = this._recursiveBuild(data);
         }
 
         BT.prototype = {
             constructor: BT,
 
-            _buildTree: function (data) {
-                function recursiveBuild(i) {
+            _recursiveBuild: function (data) {
+                function buildRecursively(i) {
                     var node = new Node(data[i][0]);
                     var leftIndex = data[i][1];
                     if (leftIndex !== -1) {
-                        var leftChild = recursiveBuild(leftIndex);
+                        var leftChild = buildRecursively(leftIndex);
                         node.setLeftChild(leftChild);
                         leftChild.setParent(node);
                     }
                     var rightIndex = data[i][2];
                     if (rightIndex !== -1) {
-                        var rightChild = recursiveBuild(rightIndex);
+                        var rightChild = buildRecursively(rightIndex);
                         node.setRightChild(rightChild);
                         rightChild.setParent(node);
                     }
                     return node;
                 }
-                return recursiveBuild(0);
+                return buildRecursively(0);
             },
 
-            inOrderTraversal: function () {
+            _iterativeBuild: function (data) {
+                //@todo
+            },
+
+            recursiveInOrderTraversal: function () {
                 function inOrderTraverse(node, nodes) {
                     if (node === null) {
                         return;
@@ -87,7 +91,27 @@
                 return inOrderTraverse(this.root, []);
             },
 
-            preOrderTraversal: function () {
+            iterativeInOrderTraversal: function () {
+                var nodes = [];
+                var stack = [];
+                var currentNode = this.root;
+                stack.push(currentNode);
+                currentNode = currentNode.getLeftChild();
+                while (currentNode instanceof Node || stack.length > 0) {
+                    while (currentNode instanceof Node) {
+                        stack.push(currentNode);
+                        currentNode = currentNode.getLeftChild();
+                    }
+                    if (stack.length > 0) {
+                        var topNode = stack.pop();
+                        nodes.push(topNode.getKey());
+                        currentNode = topNode.getRightChild();
+                    }
+                }
+                return nodes;
+            },
+
+            recursivePreOrderTraversal: function () {
                 function preOrderTraverse(node, nodes) {
                     if (node === null) {
                         return;
@@ -100,7 +124,28 @@
                 return preOrderTraverse(this.root, []);
             },
 
-            postOrderTraversal: function () {
+            iterativePreOrderTraversal: function () {
+                var nodes = [];
+                var stack = [];
+                var currentNode = this.root;
+                nodes.push(currentNode.getKey());
+                stack.push(currentNode);
+                currentNode = currentNode.getLeftChild();
+                while (currentNode instanceof Node || stack.length > 0) {
+                    while (currentNode instanceof Node) {
+                        nodes.push(currentNode.getKey());
+                        stack.push(currentNode);
+                        currentNode = currentNode.getLeftChild();
+                    }
+                    if (stack.length > 0) {
+                        var topNode = stack.pop();
+                        currentNode = topNode.getRightChild();
+                    }
+                }
+                return nodes;
+            },
+
+            recursivePostOrderTraversal: function () {
                 function postOrderTraverse(node, nodes) {
                     if (node === null) {
                         return;
@@ -111,6 +156,25 @@
                     return nodes;
                 }
                 return postOrderTraverse(this.root, []);
+            },
+
+            iterativePostOrderTraversal: function () {
+                var nodes = [];
+                var stack = [];
+                var currentNode = this.root;
+                stack.push(currentNode);
+                currentNode = currentNode.getLeftChild();
+                while (currentNode instanceof Node || stack.length > 0) {
+                    while (currentNode instanceof Node) {
+                        stack.push(currentNode);
+                        currentNode = currentNode.getLeftChild();
+                    }
+                    if (stack.length > 0) {
+                        var topNode = stack.pop();
+                        currentNode = topNode.getRightChild();
+                    }
+                }
+                return nodes;
             }
         };
 
@@ -118,17 +182,6 @@
     })();
 
     ////////////////////////////////
-
-    /*
-     1) Create an empty stack S.
-     2) Initialize current node as root
-     3) Push the current node to S and set current = current->left until current is NULL
-     4) If current is NULL and stack is not empty then
-     a) Pop the top item from stack.
-     b) Print the popped item, set current = popped_item->right
-     c) Go to step 3.
-     5) If current is NULL and stack is empty then we are done.
-     */
 
     var fs = require('fs');
     var input = (process.argv.length === 3) ? process.argv[2] : '/dev/stdin';
@@ -145,8 +198,11 @@
 
     var bt = new BT(data);
 
-    console.log(bt.inOrderTraversal().join(' '));
-    console.log(bt.preOrderTraversal().join(' '));
-    console.log(bt.postOrderTraversal().join(' '));
+    console.log('recursive inOrder', bt.recursiveInOrderTraversal().join(' '));
+    console.log('iterative inOrder', bt.iterativeInOrderTraversal().join(' '));
+    console.log('recursive preOrder', bt.recursivePreOrderTraversal().join(' '));
+    console.log('iterative preOrder', bt.iterativePreOrderTraversal().join(' '));
+    console.log('recursive postOrder', bt.recursivePostOrderTraversal().join(' '));
+    //console.log('iterative postOrder', bt.iterativePostOrderTraversal().join(' '));
 
 })();

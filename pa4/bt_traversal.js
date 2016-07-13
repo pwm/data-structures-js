@@ -56,14 +56,15 @@
 
             _recursiveBuild: function (data) {
                 function buildRecursively(i) {
-                    var node = new Node(data[i][0]);
-                    var leftIndex = data[i][1];
+                    var node = new Node(data[i][0]),
+                        leftIndex = data[i][1],
+                        rightIndex = data[i][2];
+
                     if (leftIndex !== -1) {
                         var leftChild = buildRecursively(leftIndex);
                         node.setLeftChild(leftChild);
                         leftChild.setParent(node);
                     }
-                    var rightIndex = data[i][2];
                     if (rightIndex !== -1) {
                         var rightChild = buildRecursively(rightIndex);
                         node.setRightChild(rightChild);
@@ -92,11 +93,9 @@
             },
 
             iterativeInOrderTraversal: function () {
-                var nodes = [];
-                var stack = [];
-                var currentNode = this.root;
-                stack.push(currentNode);
-                currentNode = currentNode.getLeftChild();
+                var nodes = [],
+                    stack = [],
+                    currentNode = this.root;
                 while (currentNode instanceof Node || stack.length > 0) {
                     while (currentNode instanceof Node) {
                         stack.push(currentNode);
@@ -125,21 +124,18 @@
             },
 
             iterativePreOrderTraversal: function () {
-                var nodes = [];
-                var stack = [];
-                var currentNode = this.root;
-                nodes.push(currentNode.getKey());
+                var nodes = [],
+                    stack = [],
+                    currentNode = this.root;
                 stack.push(currentNode);
-                currentNode = currentNode.getLeftChild();
-                while (currentNode instanceof Node || stack.length > 0) {
-                    while (currentNode instanceof Node) {
-                        nodes.push(currentNode.getKey());
-                        stack.push(currentNode);
-                        currentNode = currentNode.getLeftChild();
+                while (stack.length > 0) {
+                    currentNode = stack.pop();
+                    nodes.push(currentNode.getKey());
+                    if (currentNode.getRightChild() instanceof Node) {
+                        stack.push(currentNode.getRightChild());
                     }
-                    if (stack.length > 0) {
-                        var topNode = stack.pop();
-                        currentNode = topNode.getRightChild();
+                    if (currentNode.getLeftChild() instanceof Node) {
+                        stack.push(currentNode.getLeftChild());
                     }
                 }
                 return nodes;
@@ -159,22 +155,21 @@
             },
 
             iterativePostOrderTraversal: function () {
-                var nodes = [];
-                var stack = [];
-                var currentNode = this.root;
+                var nodes = [],
+                    stack = [],
+                    currentNode = this.root;
                 stack.push(currentNode);
-                currentNode = currentNode.getLeftChild();
-                while (currentNode instanceof Node || stack.length > 0) {
-                    while (currentNode instanceof Node) {
-                        stack.push(currentNode);
-                        currentNode = currentNode.getLeftChild();
+                while (stack.length > 0) {
+                    currentNode = stack.pop();
+                    nodes.push(currentNode.getKey());
+                    if (currentNode.getLeftChild() instanceof Node) {
+                        stack.push(currentNode.getLeftChild());
                     }
-                    if (stack.length > 0) {
-                        var topNode = stack.pop();
-                        currentNode = topNode.getRightChild();
+                    if (currentNode.getRightChild() instanceof Node) {
+                        stack.push(currentNode.getRightChild());
                     }
                 }
-                return nodes;
+                return nodes.reverse();
             }
         };
 
@@ -203,6 +198,6 @@
     console.log('recursive preOrder', bt.recursivePreOrderTraversal().join(' '));
     console.log('iterative preOrder', bt.iterativePreOrderTraversal().join(' '));
     console.log('recursive postOrder', bt.recursivePostOrderTraversal().join(' '));
-    //console.log('iterative postOrder', bt.iterativePostOrderTraversal().join(' '));
+    console.log('iterative postOrder', bt.iterativePostOrderTraversal().join(' '));
 
 })();

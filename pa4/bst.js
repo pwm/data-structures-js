@@ -54,6 +54,22 @@
         BST.prototype = {
             constructor: BST,
 
+            getHeight: function () {
+                return (function _recurse(node) {
+                    return node instanceof Node
+                        ? 1 + Math.max(_recurse(node.getLeftChild()), _recurse(node.getRightChild()))
+                        : 0;
+                })(this.root);
+            },
+
+            getSize: function () {
+                return (function _recurse(node) {
+                    return node instanceof Node
+                        ? 1 + _recurse(node.getLeftChild()) + _recurse(node.getRightChild())
+                        : 0;
+                })(this.root);
+            },
+
             find: function (key) {
                 var node = this._getSelfOrParent(key, this.root);
                 return node.getKey() === key
@@ -116,43 +132,40 @@
                 return hits;
             },
 
-            recursiveInOrderTraversal: function () {
-                function inOrderTraverse(node, nodes) {
+            inOrderTraversal: function () {
+                return (function _traverse(node, nodes) {
                     if (node === null) {
                         return;
                     }
-                    inOrderTraverse(node.getLeftChild(), nodes);
+                    _traverse(node.getLeftChild(), nodes);
                     nodes.push(node.getKey());
-                    inOrderTraverse(node.getRightChild(), nodes);
+                    _traverse(node.getRightChild(), nodes);
                     return nodes;
-                }
-                return inOrderTraverse(this.root, []);
+                })(this.root, []);
             },
 
-            recursivePreOrderTraversal: function () {
-                function preOrderTraverse(node, nodes) {
+            preOrderTraversal: function () {
+                return (function _traverse(node, nodes) {
                     if (node === null) {
                         return;
                     }
                     nodes.push(node.getKey());
-                    preOrderTraverse(node.getLeftChild(), nodes);
-                    preOrderTraverse(node.getRightChild(), nodes);
+                    _traverse(node.getLeftChild(), nodes);
+                    _traverse(node.getRightChild(), nodes);
                     return nodes;
-                }
-                return preOrderTraverse(this.root, []);
+                })(this.root, []);
             },
 
-            recursivePostOrderTraversal: function () {
-                function postOrderTraverse(node, nodes) {
+            postOrderTraversal: function () {
+                return (function _traverse(node, nodes) {
                     if (node === null) {
                         return;
                     }
-                    postOrderTraverse(node.getLeftChild(), nodes);
-                    postOrderTraverse(node.getRightChild(), nodes);
+                    _traverse(node.getLeftChild(), nodes);
+                    _traverse(node.getRightChild(), nodes);
                     nodes.push(node.getKey());
                     return nodes;
-                }
-                return postOrderTraverse(this.root, []);
+                })(this.root, []);
             },
 
             iterativeInOrderTraversal: function () {
@@ -263,11 +276,14 @@
     bst.insert(2);
     bst.insert(4);
 
-    console.log('recursiveInOrder:', bst.recursiveInOrderTraversal().join(' ')); // 1 2 3 4 5
+    console.log('height:', bst.getHeight()); // 3
+    console.log('size:', bst.getSize()); // 5
+
+    console.log('recursiveInOrder:', bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
     console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' ')); // 1 2 3 4 5
-    console.log('recursivePreOrder:', bst.recursivePreOrderTraversal().join(' ')); // 3 1 2 5 4
+    console.log('recursivePreOrder:', bst.preOrderTraversal().join(' ')); // 3 1 2 5 4
     console.log('iterativePreOrder:', bst.iterativePreOrderTraversal().join(' ')); // 3 1 2 5 4
-    console.log('recursivePostOrder:', bst.recursivePostOrderTraversal().join(' ')); // 2 1 4 5 3
+    console.log('recursivePostOrder:', bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
     console.log('iterativePostOrder:', bst.iterativePostOrderTraversal().join(' ')); // 2 1 4 5 3
 
     console.log('find 2:', bst.find(2).getKey()); // 2

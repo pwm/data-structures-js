@@ -1,5 +1,8 @@
 (function() { 'use strict';
 
+    /**
+     * Disjoint-set
+     */
     var DisjointSet = (function () {
         function DisjointSet(withPathCompression) {
             this.parent = [];

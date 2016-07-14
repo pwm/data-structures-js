@@ -1,5 +1,8 @@
 (function () { 'use strict';
 
+    /**
+     * Stack
+     */
     var Stack = (function() {
         function Stack() {
             this.top = null;

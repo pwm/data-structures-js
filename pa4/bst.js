@@ -1,5 +1,8 @@
 (function() { 'use strict';
 
+    /**
+     * Binary search tree
+     */
     var BST = (function () {
         function BST() {
             this.root = null;
@@ -88,7 +91,7 @@
                 }
                 var newNode = new Node(key);
                 newNode.setParent(parent);
-                (parent.getKey() > key)
+                parent.getKey() > key
                     ? parent.setLeftChild(newNode)
                     : parent.setRightChild(newNode);
             },
@@ -118,24 +121,24 @@
             },
 
             rangeSearch: function (keyFrom, keyTo) {
-                var hits = [];
-                var currentNode = this._getSelfOrParent(keyFrom, this.root);
+                var inRange = [],
+                    currentNode = this._getSelfOrParent(keyFrom, this.root);
                 // if currentNode is the largest then _getNextLargest will return null
                 while (currentNode instanceof Node && currentNode.getKey() <= keyTo) {
                     // currentNode's key can be smaller than keyFrom
                     // because we might not have an exact _getSelfOrParent
                     if (currentNode.getKey() >= keyFrom) {
-                        hits.push(currentNode.getKey());
+                        inRange.push(currentNode.getKey());
                     }
                     currentNode = this._getNextLargest(currentNode);
                 }
-                return hits;
+                return inRange;
             },
 
             inOrderTraversal: function () {
                 return (function _traverse(node, nodes) {
                     if (node === null) {
-                        return;
+                        return nodes;
                     }
                     _traverse(node.getLeftChild(), nodes);
                     nodes.push(node.getKey());
@@ -147,7 +150,7 @@
             preOrderTraversal: function () {
                 return (function _traverse(node, nodes) {
                     if (node === null) {
-                        return;
+                        return nodes;
                     }
                     nodes.push(node.getKey());
                     _traverse(node.getLeftChild(), nodes);
@@ -159,7 +162,7 @@
             postOrderTraversal: function () {
                 return (function _traverse(node, nodes) {
                     if (node === null) {
-                        return;
+                        return nodes;
                     }
                     _traverse(node.getLeftChild(), nodes);
                     _traverse(node.getRightChild(), nodes);
@@ -190,6 +193,9 @@
                 var nodes = [],
                     stack = [],
                     currentNode = this.root;
+                if (currentNode === null) {
+                    return nodes;
+                }
                 stack.push(currentNode);
                 while (stack.length > 0) {
                     currentNode = stack.pop();
@@ -208,6 +214,9 @@
                 var nodes = [],
                     stack = [],
                     currentNode = this.root;
+                if (currentNode === null) {
+                    return nodes;
+                }
                 stack.push(currentNode);
                 while (stack.length > 0) {
                     currentNode = stack.pop();
@@ -222,6 +231,26 @@
                 return nodes.reverse();
             },
 
+            levelTraversal: function () {
+                var nodes = [],
+                    queue = [];
+                if (this.root === null) {
+                    return nodes;
+                }
+                queue.push(this.root);
+                while (queue.length > 0) {
+                    var frontNode = queue.shift();
+                    nodes.push(frontNode.getKey());
+                    if (frontNode.getLeftChild() instanceof Node) {
+                        queue.push(frontNode.getLeftChild());
+                    }
+                    if (frontNode.getRightChild() instanceof Node) {
+                        queue.push(frontNode.getRightChild());
+                    }
+                }
+                return nodes;
+            },
+
             _setRoot: function (node) {
                 this.root = node;
                 node.setParent(null);
@@ -231,24 +260,24 @@
                 if (node.getKey() === key) {
                     return node;
                 } else if (node.getKey() > key) {
-                    return (node.getLeftChild() instanceof Node)
+                    return node.getLeftChild() instanceof Node
                         ? this._getSelfOrParent(key, node.getLeftChild())
                         : node;
                 } else if (node.getKey() < key) {
-                    return (node.getRightChild() instanceof Node)
+                    return node.getRightChild() instanceof Node
                         ? this._getSelfOrParent(key, node.getRightChild())
                         : node;
                 }
             },
 
             _getNextLargest: function (node) {
-                return (node.getRightChild() instanceof Node)
+                return node.getRightChild() instanceof Node
                     ? this._leftDescendant(node.getRightChild())
                     : this._rightAncestor(node);
             },
 
             _leftDescendant: function (node) {
-                return (node.getLeftChild() instanceof Node)
+                return node.getLeftChild() instanceof Node
                     ? this._leftDescendant(node.getLeftChild())
                     : node;
             },
@@ -257,7 +286,7 @@
                 if (node === this.root) {
                     return null;
                 }
-                return (node.getKey() < node.getParent().getKey())
+                return node.getKey() < node.getParent().getKey()
                     ? node.getParent()
                     : this._rightAncestor(node.getParent());
             }
@@ -270,14 +299,16 @@
     
     var bst = new BST();
 
+    console.log('height:', bst.getHeight()); // 3
+    console.log('size:', bst.getSize()); // 5
+
     bst.insert(3);
     bst.insert(1);
     bst.insert(5);
     bst.insert(2);
     bst.insert(4);
 
-    console.log('height:', bst.getHeight()); // 3
-    console.log('size:', bst.getSize()); // 5
+    console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 3, 5
 
     console.log('recursiveInOrder:', bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
     console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' ')); // 1 2 3 4 5
@@ -285,12 +316,15 @@
     console.log('iterativePreOrder:', bst.iterativePreOrderTraversal().join(' ')); // 3 1 2 5 4
     console.log('recursivePostOrder:', bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
     console.log('iterativePostOrder:', bst.iterativePostOrderTraversal().join(' ')); // 2 1 4 5 3
+    console.log('levelTraversal:', bst.levelTraversal().join(' ')); // 2 1 4 5 3
 
     console.log('find 2:', bst.find(2).getKey()); // 2
     console.log('range(2, 4):', bst.rangeSearch(2, 4).join(' ')); // 2 3 4
 
     bst.delete(2);
     bst.delete(4);
+
+    console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 2, 3
 
     console.log('find 2 after deleting 2:', bst.find(2)); // null
     console.log('range(2, 4) after deleting 2 and 4:', bst.rangeSearch(2, 4).join(' ')); // 3

@@ -1,5 +1,8 @@
 (function () { 'use strict';
 
+    /**
+     * Queue
+     */
     var Queue = (function() {
         function Queue() {
             this.back = null;

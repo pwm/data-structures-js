@@ -1,78 +1,83 @@
 (function() { 'use strict';
 
-    var Node = (function () {
-        function Node(key) {
-            this.key = key;
-            this.parent = null;
-            this.leftChild = null;
-            this.rightChild = null;
-        }
-
-        Node.prototype = {
-            constructor: Node,
-
-            getKey: function () {
-                return this.key;
-            },
-
-            setParent: function (parent) {
-                this.parent = parent;
-                return this;
-            },
-
-            setLeftChild: function (leftChild) {
-                this.leftChild = leftChild;
-                return this;
-            },
-
-            setRightChild: function (rightChild) {
-                this.rightChild = rightChild;
-                return this;
-            },
-
-            getParent: function () {
-                return this.parent;
-            },
-
-            getLeftChild: function () {
-                return this.leftChild;
-            },
-
-            getRightChild: function () {
-                return this.rightChild;
-            }
-        };
-
-        return Node;
-    })();
-
     var BT = (function () {
         function BT(data) {
             this.root = this._recursiveBuild(data);
         }
 
+        var Node = (function () {
+            function Node(key) {
+                this.key = key;
+                this.parent = null;
+                this.leftChild = null;
+                this.rightChild = null;
+            }
+
+            Node.prototype = {
+                constructor: Node,
+
+                getKey: function () {
+                    return this.key;
+                },
+
+                setParent: function (parent) {
+                    this.parent = parent;
+                    return this;
+                },
+
+                setLeftChild: function (leftChild) {
+                    this.leftChild = leftChild;
+                    return this;
+                },
+
+                setRightChild: function (rightChild) {
+                    this.rightChild = rightChild;
+                    return this;
+                },
+
+                getParent: function () {
+                    return this.parent;
+                },
+
+                getLeftChild: function () {
+                    return this.leftChild;
+                },
+
+                getRightChild: function () {
+                    return this.rightChild;
+                }
+            };
+
+            return Node;
+        })();
+
         BT.prototype = {
             constructor: BT,
 
             _recursiveBuild: function (data) {
+                var nodes = [];
                 function buildRecursively(i) {
                     var node = new Node(data[i][0]),
                         leftIndex = data[i][1],
                         rightIndex = data[i][2];
-
+                    //nodes.push(node.getKey()); // preOrder
                     if (leftIndex !== -1) {
                         var leftChild = buildRecursively(leftIndex);
                         node.setLeftChild(leftChild);
                         leftChild.setParent(node);
                     }
+                    //nodes.push(node.getKey()); // inOrder
                     if (rightIndex !== -1) {
                         var rightChild = buildRecursively(rightIndex);
                         node.setRightChild(rightChild);
                         rightChild.setParent(node);
                     }
+                    //nodes.push(node.getKey()); // postOrder
                     return node;
                 }
-                return buildRecursively(0);
+                var res = buildRecursively(0);
+                console.log(nodes.join(' '));
+                return res;
             },
 
             _iterativeBuild: function (data) {
@@ -90,6 +95,32 @@
                     return nodes;
                 }
                 return inOrderTraverse(this.root, []);
+            },
+
+            recursivePreOrderTraversal: function () {
+                function preOrderTraverse(node, nodes) {
+                    if (node === null) {
+                        return;
+                    }
+                    nodes.push(node.getKey());
+                    preOrderTraverse(node.getLeftChild(), nodes);
+                    preOrderTraverse(node.getRightChild(), nodes);
+                    return nodes;
+                }
+                return preOrderTraverse(this.root, []);
+            },
+
+            recursivePostOrderTraversal: function () {
+                function postOrderTraverse(node, nodes) {
+                    if (node === null) {
+                        return;
+                    }
+                    postOrderTraverse(node.getLeftChild(), nodes);
+                    postOrderTraverse(node.getRightChild(), nodes);
+                    nodes.push(node.getKey());
+                    return nodes;
+                }
+                return postOrderTraverse(this.root, []);
             },
 
             iterativeInOrderTraversal: function () {
@@ -110,19 +141,6 @@
                 return nodes;
             },
 
-            recursivePreOrderTraversal: function () {
-                function preOrderTraverse(node, nodes) {
-                    if (node === null) {
-                        return;
-                    }
-                    nodes.push(node.getKey());
-                    preOrderTraverse(node.getLeftChild(), nodes);
-                    preOrderTraverse(node.getRightChild(), nodes);
-                    return nodes;
-                }
-                return preOrderTraverse(this.root, []);
-            },
-
             iterativePreOrderTraversal: function () {
                 var nodes = [],
                     stack = [],
@@ -139,19 +157,6 @@
                     }
                 }
                 return nodes;
-            },
-
-            recursivePostOrderTraversal: function () {
-                function postOrderTraverse(node, nodes) {
-                    if (node === null) {
-                        return;
-                    }
-                    postOrderTraverse(node.getLeftChild(), nodes);
-                    postOrderTraverse(node.getRightChild(), nodes);
-                    nodes.push(node.getKey());
-                    return nodes;
-                }
-                return postOrderTraverse(this.root, []);
             },
 
             iterativePostOrderTraversal: function () {
@@ -193,11 +198,11 @@
 
     var bt = new BT(data);
 
-    console.log('recursive inOrder', bt.recursiveInOrderTraversal().join(' '));
-    console.log('iterative inOrder', bt.iterativeInOrderTraversal().join(' '));
-    console.log('recursive preOrder', bt.recursivePreOrderTraversal().join(' '));
-    console.log('iterative preOrder', bt.iterativePreOrderTraversal().join(' '));
-    console.log('recursive postOrder', bt.recursivePostOrderTraversal().join(' '));
-    console.log('iterative postOrder', bt.iterativePostOrderTraversal().join(' '));
+    //console.log(bt.recursiveInOrderTraversal().join(' '));
+    console.log(bt.iterativeInOrderTraversal().join(' '));
+    //console.log(bt.recursivePreOrderTraversal().join(' '));
+    console.log(bt.iterativePreOrderTraversal().join(' '));
+    //console.log(bt.recursivePostOrderTraversal().join(' '));
+    console.log(bt.iterativePostOrderTraversal().join(' '));
 
 })();

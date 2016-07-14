@@ -67,7 +67,7 @@
                     return;
                 }
                 var parent = this._getSelfOrParent(key, this.root);
-                if (parent.getKey() === key) { // trying to add an existing key
+                if (parent.getKey() === key) {
                     return;
                 }
                 var newNode = new Node(key);
@@ -79,7 +79,7 @@
 
             delete: function (key) {
                 var node = this.find(key);
-                if (node === null) { // trying to delete a non-existent key
+                if (node === null) {
                     return;
                 }
                 // Replace node with replaceNode
@@ -101,45 +101,6 @@
                 }
             },
 
-            inOrderTraversal: function () {
-                function inOrderTraverse(node, nodes) {
-                    if (node === null) {
-                        return;
-                    }
-                    inOrderTraverse(node.getLeftChild(), nodes);
-                    nodes.push(node.getKey());
-                    inOrderTraverse(node.getRightChild(), nodes);
-                    return nodes;
-                }
-                return inOrderTraverse(this.root, []);
-            },
-
-            preOrderTraversal: function () {
-                function preOrderTraverse(node, nodes) {
-                    if (node === null) {
-                        return;
-                    }
-                    nodes.push(node.getKey());
-                    preOrderTraverse(node.getLeftChild(), nodes);
-                    preOrderTraverse(node.getRightChild(), nodes);
-                    return nodes;
-                }
-                return preOrderTraverse(this.root, []);
-            },
-
-            postOrderTraversal: function () {
-                function postOrderTraverse(node, nodes) {
-                    if (node === null) {
-                        return;
-                    }
-                    postOrderTraverse(node.getLeftChild(), nodes);
-                    postOrderTraverse(node.getRightChild(), nodes);
-                    nodes.push(node.getKey());
-                    return nodes;
-                }
-                return postOrderTraverse(this.root, []);
-            },
-
             rangeSearch: function (keyFrom, keyTo) {
                 var hits = [];
                 var currentNode = this._getSelfOrParent(keyFrom, this.root);
@@ -153,6 +114,99 @@
                     currentNode = this._getNextLargest(currentNode);
                 }
                 return hits;
+            },
+
+            recursiveInOrderTraversal: function () {
+                function inOrderTraverse(node, nodes) {
+                    if (node === null) {
+                        return;
+                    }
+                    inOrderTraverse(node.getLeftChild(), nodes);
+                    nodes.push(node.getKey());
+                    inOrderTraverse(node.getRightChild(), nodes);
+                    return nodes;
+                }
+                return inOrderTraverse(this.root, []);
+            },
+
+            recursivePreOrderTraversal: function () {
+                function preOrderTraverse(node, nodes) {
+                    if (node === null) {
+                        return;
+                    }
+                    nodes.push(node.getKey());
+                    preOrderTraverse(node.getLeftChild(), nodes);
+                    preOrderTraverse(node.getRightChild(), nodes);
+                    return nodes;
+                }
+                return preOrderTraverse(this.root, []);
+            },
+
+            recursivePostOrderTraversal: function () {
+                function postOrderTraverse(node, nodes) {
+                    if (node === null) {
+                        return;
+                    }
+                    postOrderTraverse(node.getLeftChild(), nodes);
+                    postOrderTraverse(node.getRightChild(), nodes);
+                    nodes.push(node.getKey());
+                    return nodes;
+                }
+                return postOrderTraverse(this.root, []);
+            },
+
+            iterativeInOrderTraversal: function () {
+                var nodes = [],
+                    stack = [],
+                    currentNode = this.root;
+                while (currentNode instanceof Node || stack.length > 0) {
+                    while (currentNode instanceof Node) {
+                        stack.push(currentNode);
+                        currentNode = currentNode.getLeftChild();
+                    }
+                    if (stack.length > 0) {
+                        var topNode = stack.pop();
+                        nodes.push(topNode.getKey());
+                        currentNode = topNode.getRightChild();
+                    }
+                }
+                return nodes;
+            },
+
+            iterativePreOrderTraversal: function () {
+                var nodes = [],
+                    stack = [],
+                    currentNode = this.root;
+                stack.push(currentNode);
+                while (stack.length > 0) {
+                    currentNode = stack.pop();
+                    nodes.push(currentNode.getKey());
+                    if (currentNode.getRightChild() instanceof Node) {
+                        stack.push(currentNode.getRightChild());
+                    }
+                    if (currentNode.getLeftChild() instanceof Node) {
+                        stack.push(currentNode.getLeftChild());
+                    }
+                }
+                return nodes;
+            },
+
+            iterativePostOrderTraversal: function () {
+                var nodes = [],
+                    stack = [],
+                    currentNode = this.root;
+                stack.push(currentNode);
+                while (stack.length > 0) {
+                    currentNode = stack.pop();
+                    nodes.push(currentNode.getKey());
+                    if (currentNode.getLeftChild() instanceof Node) {
+                        stack.push(currentNode.getLeftChild());
+                    }
+                    if (currentNode.getRightChild() instanceof Node) {
+                        stack.push(currentNode.getRightChild());
+                    }
+                }
+                return nodes.reverse();
             },
 
             _setRoot: function (node) {
@@ -209,17 +263,20 @@
     bst.insert(2);
     bst.insert(4);
 
-    console.log(bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
-    console.log(bst.preOrderTraversal().join(' ')); // 3 1 2 5 4
-    console.log(bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
+    console.log('recursiveInOrder:', bst.recursiveInOrderTraversal().join(' ')); // 1 2 3 4 5
+    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' ')); // 1 2 3 4 5
+    console.log('recursivePreOrder:', bst.recursivePreOrderTraversal().join(' ')); // 3 1 2 5 4
+    console.log('iterativePreOrder:', bst.iterativePreOrderTraversal().join(' ')); // 3 1 2 5 4
+    console.log('recursivePostOrder:', bst.recursivePostOrderTraversal().join(' ')); // 2 1 4 5 3
+    console.log('iterativePostOrder:', bst.iterativePostOrderTraversal().join(' ')); // 2 1 4 5 3
 
-    console.log(bst.find(2).getKey()); // 2
-    console.log(bst.rangeSearch(2, 4).join(' ')); // 2 3 4
+    console.log('find 2:', bst.find(2).getKey()); // 2
+    console.log('range(2, 4):', bst.rangeSearch(2, 4).join(' ')); // 2 3 4
 
     bst.delete(2);
     bst.delete(4);
 
-    console.log(bst.find(2)); // null
-    console.log(bst.rangeSearch(2, 4).join(' ')); // 3
+    console.log('find 2 after deleting 2:', bst.find(2)); // null
+    console.log('range(2, 4) after deleting 2 and 4:', bst.rangeSearch(2, 4).join(' ')); // 3
 
 })();

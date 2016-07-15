@@ -57,6 +57,10 @@
         BST.prototype = {
             constructor: BST,
 
+            reset: function () {
+                this.root = null;
+            },
+
             getHeight: function () {
                 return (function _recurse(node) {
                     return node instanceof Node
@@ -101,18 +105,36 @@
                 if (node === null) {
                     return;
                 }
-                // Replace node with replaceNode
-                // promote replaceNode.Right (replaceNode's parent becomes replaceNode.Right's parent)
                 if (node.getRightChild() instanceof Node) {
+                    // never returns null as node is not the largest key (has right child)
+                    // this also guarantees that replaceNode always has a parent
                     var replaceNode = this._getNextLargest(node);
-                    //@todo
-                } else { // Remove node and promote its left child (if there is one) to its place
+                    // replace node with replaceNode
+                    if (node === this.root) {
+                        this._setRoot(replaceNode);
+                        if (node.getLeftChild() instanceof Node) {
+                            node.getLeftChild().setParent(replaceNode);
+                            replaceNode.setLeftChild(node.getLeftChild());
+                        }
+                    } else {
+                        node.getKey() < node.getParent().getKey()
+                            ? node.getParent().setLeftChild(replaceNode)
+                            : node.getParent().setRightChild(replaceNode);
+                        replaceNode.setParent(node.getParent());
+                        // if replaceNode has a right child then move it to replaceNode's place
+                        if (replaceNode.getRightChild() instanceof Node) {
+                            replaceNode.getParent().setLeftChild(replaceNode.getRightChild());
+                            replaceNode.getRightChild().setParent(replaceNode.getParent());
+                        }
+                    }
+                } else {
                     if (node === this.root) {
                         this._setRoot(node.getLeftChild());
                     } else {
-                        node.getKey() > node.getParent().getKey()
-                            ? node.getParent().setRightChild(node.getLeftChild())
-                            : node.getParent().setLeftChild(node.getLeftChild());
+                        // replace node with node's left child, if any, or null
+                        node.getKey() < node.getParent().getKey()
+                            ? node.getParent().setLeftChild(node.getLeftChild())
+                            : node.getParent().setRightChild(node.getLeftChild());
                         if (node.getLeftChild() instanceof Node) {
                             node.getLeftChild().setParent(node.getParent());
                         }
@@ -253,7 +275,9 @@
 
             _setRoot: function (node) {
                 this.root = node;
-                node.setParent(null);
+                if (node instanceof Node) {
+                    node.setParent(null);
+                }
             },
 
             _getSelfOrParent: function (key, node) {
@@ -299,30 +323,37 @@
     
     var bst = new BST();
 
-    console.log('height:', bst.getHeight()); // 3
-    console.log('size:', bst.getSize()); // 5
-
-    bst.insert(3);
-    bst.insert(1);
-    bst.insert(5);
     bst.insert(2);
+    bst.insert(1);
+    bst.insert(3);
+    bst.insert(5);
     bst.insert(4);
 
-    console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 3, 5
+    console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 0, 0
 
-    console.log('recursiveInOrder:', bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
-    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' ')); // 1 2 3 4 5
-    console.log('recursivePreOrder:', bst.preOrderTraversal().join(' ')); // 3 1 2 5 4
-    console.log('iterativePreOrder:', bst.iterativePreOrderTraversal().join(' ')); // 3 1 2 5 4
-    console.log('recursivePostOrder:', bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
-    console.log('iterativePostOrder:', bst.iterativePostOrderTraversal().join(' ')); // 2 1 4 5 3
-    console.log('levelTraversal:', bst.levelTraversal().join(' ')); // 2 1 4 5 3
+    // bst.insert(3);
+    // bst.insert(1);
+    // bst.insert(5);
+    // bst.insert(2);
+    // bst.insert(4);
 
-    console.log('find 2:', bst.find(2).getKey()); // 2
-    console.log('range(2, 4):', bst.rangeSearch(2, 4).join(' ')); // 2 3 4
+    // console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 3, 5
+    //
+    // console.log('recursiveInOrder:', bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
+    // console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' ')); // 1 2 3 4 5
+    // console.log('recursivePreOrder:', bst.preOrderTraversal().join(' ')); // 3 1 2 5 4
+    // console.log('iterativePreOrder:', bst.iterativePreOrderTraversal().join(' ')); // 3 1 2 5 4
+    // console.log('recursivePostOrder:', bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
+    // console.log('iterativePostOrder:', bst.iterativePostOrderTraversal().join(' ')); // 2 1 4 5 3
+    // console.log('levelTraversal:', bst.levelTraversal().join(' ')); // 2 1 4 5 3
+    //
+    // console.log('find 2:', bst.find(2).getKey()); // 2
+    // console.log('range(2, 4):', bst.rangeSearch(2, 4).join(' ')); // 2 3 4
 
-    bst.delete(2);
-    bst.delete(4);
+    bst.delete(1);
+    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
+    bst.delete(3);
+    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
 
     console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 2, 3
 

@@ -57,10 +57,6 @@
         BST.prototype = {
             constructor: BST,
 
-            reset: function () {
-                this.root = null;
-            },
-
             getHeight: function () {
                 return (function _recurse(node) {
                     return node instanceof Node
@@ -77,11 +73,88 @@
                 })(this.root);
             },
 
+            visualize: function () {
+                var queue = [],
+                    height = this.getHeight(),
+                    size = this.getSize(),
+                    levelCounter = 0,
+                    currDepth = 1,
+                    display = [];
+
+                if (size > 99) {
+                    console.log('Tree is too big to display');
+                    return;
+                }
+                
+                if (this.root instanceof Node) {
+                    queue.push(this.root);
+                    while (queue.length > 0) {
+                        var nodeDisplayWidth = size < 10 ? 1 : 2;
+                        var fullSpace = ' '.repeat(Math.pow(2,height - currDepth + 1) - 1).repeat(nodeDisplayWidth);
+                        var halfSpace = ' '.repeat(Math.pow(2,height - currDepth) - 1).repeat(nodeDisplayWidth);
+                        var displayNonexistentNode = ' '.repeat(nodeDisplayWidth);
+
+                        var frontNode = queue.shift();
+
+                        if (frontNode instanceof Node) {
+                            var displayNode = frontNode.getKey();
+                            if (nodeDisplayWidth === 2 && parseInt(displayNode)<=9) {
+                                displayNode = ' ' + displayNode;
+                            }
+                            display[currDepth - 1] === undefined
+                                ? display[currDepth - 1] = halfSpace + displayNode
+                                : display[currDepth - 1] += fullSpace + displayNode;
+                        } else {
+                            display[currDepth - 1] === undefined
+                                ? display[currDepth - 1] = halfSpace + displayNonexistentNode
+                                : display[currDepth - 1] += fullSpace + displayNonexistentNode;
+                        }
+
+                        levelCounter++;
+                        if (levelCounter === Math.pow(2,currDepth) - 1) {
+                            currDepth++;
+                        }
+
+                        if (frontNode instanceof Node) {
+                            queue.push(frontNode.getLeftChild());
+                        } else if (currDepth < height) {
+                            queue.push('noLeftChild');
+                        }
+                        if (frontNode instanceof Node) {
+                            queue.push(frontNode.getRightChild());
+                        } else if (currDepth < height) {
+                            queue.push('noRightChild');
+                        }
+                    }
+                }
+
+
+                // fill the display array ends with whitespaces for fun
+                // for (var i = 0; i < display.length; i++) {
+                //     if (display[i].length < Math.pow(2, height) - 1) {
+                //         display[i] += ' '.repeat(Math.pow(2, height) - 1 - display[i].length);
+                //     }
+                // }
+                // display tree
+                for (var i = 0; i < display.length; i++) {
+                    if (/\S/.test(display[i])) {
+                        console.log(display[i]);
+                    }
+                }
+            },
+
             find: function (key) {
                 var node = this._getSelfOrParent(key, this.root);
                 return node.getKey() === key
                     ? node
                     : null;
+            },
+
+            insertFromArray: function (a) {
+                var aLength = a.length;
+                for (var i = 0; i < aLength; i++) {
+                    this.insert(a[i]);
+                }
             },
 
             insert: function (key) {
@@ -346,51 +419,48 @@
     })();
 
     ////////////////////////////////
-    
+
+    function shuffle(a) {
+        var j, x, i;
+        for (i = a.length; i; i--) {
+            j = Math.floor(Math.random() * i);
+            x = a[i - 1];
+            a[i - 1] = a[j];
+            a[j] = x;
+        }
+        return a;
+    }
+
+    function haveSomeFun() {
+        var sleep = require('sleep');
+
+        var size = 7;
+        var a = [];
+        for (var i = 1; i <= size; i++) {
+            a.push(i);
+        }
+        while (true) {
+            var bst = new BST();
+            bst.insertFromArray(shuffle(a));
+            bst.visualize();
+            sleep.usleep(500000);
+        }
+    }
+
+    ////////////////////////////////
+
+    //haveSomeFun();
+
+
     var bst = new BST();
 
-    bst.insert(2);
-    bst.insert(1);
-    bst.insert(4);
-    bst.insert(3);
-    bst.insert(6);
-    bst.insert(5);
-    //bst.insert(7);
+    //bst.insertFromArray([1, 2, 3, 4, 5, 6, 7]);
+    bst.insertFromArray([2, 1, 4, 3, 10, 9, 5, 7, 6, 8, 12, 11, 13]);
+    //bst.insert(1);
+    bst.visualize(); console.log('----');
 
-    //console.log('height:', bst.getHeight(), ', size:', bst.getSize());
-    //bst.delete(4);
-    //console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
-    console.log('height:', bst.getHeight(), ', size:', bst.getSize());
-    bst.delete(4);
-    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
-    console.log('height:', bst.getHeight(), ', size:', bst.getSize());
-    process.exit();
-
-
-    // bst.insert(3);
-    // bst.insert(1);
-    // bst.insert(5);
-    // bst.insert(2);
-    // bst.insert(4);
-
-    // console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 3, 5
-    //
-    // console.log('recursiveInOrder:', bst.inOrderTraversal().join(' ')); // 1 2 3 4 5
-    // console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' ')); // 1 2 3 4 5
-    // console.log('recursivePreOrder:', bst.preOrderTraversal().join(' ')); // 3 1 2 5 4
-    // console.log('iterativePreOrder:', bst.iterativePreOrderTraversal().join(' ')); // 3 1 2 5 4
-    // console.log('recursivePostOrder:', bst.postOrderTraversal().join(' ')); // 2 1 4 5 3
-    // console.log('iterativePostOrder:', bst.iterativePostOrderTraversal().join(' ')); // 2 1 4 5 3
-    // console.log('levelTraversal:', bst.levelTraversal().join(' ')); // 2 1 4 5 3
-    //
-    // console.log('find 2:', bst.find(2).getKey()); // 2
-    // console.log('range(2, 4):', bst.rangeSearch(2, 4).join(' ')); // 2 3 4
-
-
-
-    console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 2, 3
-
-    console.log('find 2 after deleting 2:', bst.find(2)); // null
-    console.log('range(2, 4) after deleting 2 and 4:', bst.rangeSearch(2, 4).join(' ')); // 3
+    bst.delete(4); bst.visualize(); console.log('----');
+    //bst.delete(2); bst.visualize(); console.log('----');
+    //bst.delete(1); bst.visualize(); console.log('----');
 
 })();

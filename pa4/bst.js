@@ -105,39 +105,65 @@
                 if (node === null) {
                     return;
                 }
-                if (node.getRightChild() instanceof Node) {
-                    // never returns null as node is not the largest key (has right child)
-                    // this also guarantees that replaceNode always has a parent
-                    var replaceNode = this._getNextLargest(node);
-                    // replace node with replaceNode
-                    if (node === this.root) {
-                        this._setRoot(replaceNode);
-                        if (node.getLeftChild() instanceof Node) {
-                            node.getLeftChild().setParent(replaceNode);
-                            replaceNode.setLeftChild(node.getLeftChild());
-                        }
+                // node has no children (ie. right child is null as well) or only has right child
+                if (node.getLeftChild() === null) {
+                    if (node.getKey() === this.root.getKey()) {
+                        this._setRoot(node.getRightChild());
                     } else {
                         node.getKey() < node.getParent().getKey()
-                            ? node.getParent().setLeftChild(replaceNode)
-                            : node.getParent().setRightChild(replaceNode);
-                        replaceNode.setParent(node.getParent());
-                        // if replaceNode has a right child then move it to replaceNode's place
-                        if (replaceNode.getRightChild() instanceof Node) {
-                            replaceNode.getParent().setLeftChild(replaceNode.getRightChild());
-                            replaceNode.getRightChild().setParent(replaceNode.getParent());
+                            ? node.getParent().setLeftChild(node.getRightChild())
+                            : node.getParent().setRightChild(node.getRightChild());
+                        if (node.getRightChild() instanceof Node) {
+                            node.getRightChild().setParent(node.getParent());
                         }
                     }
-                } else {
-                    if (node === this.root) {
+                // node has only left child
+                } else if (node.getRightChild() === null) {
+                    if (node.getKey() === this.root.getKey()) {
                         this._setRoot(node.getLeftChild());
                     } else {
-                        // replace node with node's left child, if any, or null
                         node.getKey() < node.getParent().getKey()
                             ? node.getParent().setLeftChild(node.getLeftChild())
                             : node.getParent().setRightChild(node.getLeftChild());
-                        if (node.getLeftChild() instanceof Node) {
-                            node.getLeftChild().setParent(node.getParent());
+                        node.getLeftChild().setParent(node.getParent());
+                    }
+                // node has both children
+                } else {
+                    // never returns null as node is not the largest key (has right child)
+                    // this also guarantees that nextLargestNode always has a parent
+                    var nextLargestNode = this._getNextLargest(node);
+                    // node's next largest is node's right child
+                    if (node.getRightChild().getKey() === nextLargestNode.getKey()) {
+                        if (node.getKey() === this.root.getKey()) {
+                            this._setRoot(node.getRightChild());
+                        } else {
+                            node.getKey() < node.getParent().getKey()
+                                ? node.getParent().setLeftChild(node.getRightChild())
+                                : node.getParent().setRightChild(node.getRightChild());
+                            node.getRightChild().setParent(node.getParent());
                         }
+                        node.getLeftChild().setParent(node.getRightChild());
+                        node.getRightChild().setLeftChild(node.getLeftChild());
+                    // node's next largest is in node's right subtree
+                    } else {
+                        // replace nextLargestNode with its right child
+                        nextLargestNode.getParent().setLeftChild(nextLargestNode.getRightChild());
+                        if (nextLargestNode.getRightChild() instanceof Node) {
+                            nextLargestNode.getRightChild().setParent(nextLargestNode.getParent());
+                        }
+                        // replace node with nextLargestNode
+                        if (node.getKey() === this.root.getKey()) {
+                            this._setRoot(nextLargestNode);
+                        } else {
+                            node.getKey() < node.getParent().getKey()
+                                ? node.getParent().setLeftChild(nextLargestNode)
+                                : node.getParent().setRightChild(nextLargestNode);
+                            nextLargestNode.setParent(node.getParent());
+                        }
+                        node.getRightChild().setParent(nextLargestNode);
+                        node.getLeftChild().setParent(nextLargestNode);
+                        nextLargestNode.setRightChild(node.getRightChild());
+                        nextLargestNode.setLeftChild(node.getLeftChild());
                     }
                 }
             },
@@ -307,7 +333,7 @@
             },
 
             _rightAncestor: function (node) {
-                if (node === this.root) {
+                if (node.getKey() === this.root.getKey()) {
                     return null;
                 }
                 return node.getKey() < node.getParent().getKey()
@@ -325,11 +351,21 @@
 
     bst.insert(2);
     bst.insert(1);
-    bst.insert(3);
-    bst.insert(5);
     bst.insert(4);
+    bst.insert(3);
+    bst.insert(6);
+    bst.insert(5);
+    //bst.insert(7);
 
-    console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 0, 0
+    //console.log('height:', bst.getHeight(), ', size:', bst.getSize());
+    //bst.delete(4);
+    //console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
+    console.log('height:', bst.getHeight(), ', size:', bst.getSize());
+    bst.delete(4);
+    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
+    console.log('height:', bst.getHeight(), ', size:', bst.getSize());
+    process.exit();
+
 
     // bst.insert(3);
     // bst.insert(1);
@@ -350,10 +386,7 @@
     // console.log('find 2:', bst.find(2).getKey()); // 2
     // console.log('range(2, 4):', bst.rangeSearch(2, 4).join(' ')); // 2 3 4
 
-    bst.delete(1);
-    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
-    bst.delete(3);
-    console.log('iterativeInOrder:', bst.iterativeInOrderTraversal().join(' '));
+
 
     console.log('height:', bst.getHeight(), ', size:', bst.getSize()); // 2, 3
 

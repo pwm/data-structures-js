@@ -96,10 +96,7 @@
                 for (i = this.textLength - this.patternLength - 1; i >= 0; i--) {
                     var startChar = this.text.charCodeAt(i);
                     var endChar = this.text.charCodeAt(i + this.patternLength);
-                    precomputedHashes[i] =
-                        (this.x * precomputedHashes[i + 1] +
-                        ((startChar - y * endChar) % this.prime + this.prime) % this.prime
-                        ) % this.prime;
+                    precomputedHashes[i] = ((this.x * precomputedHashes[i + 1] + startChar - y * endChar) % this.prime + this.prime) % this.prime;
                 }
                 return precomputedHashes;
             },

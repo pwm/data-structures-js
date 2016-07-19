@@ -81,7 +81,7 @@
                     currDepth = 1,
                     display = [];
 
-                if (size > 99) {
+                if (size > 20) {
                     console.log('Tree is too big to display');
                     return;
                 }
@@ -127,14 +127,6 @@
                         }
                     }
                 }
-
-
-                // fill the display array ends with whitespaces for fun
-                // for (var i = 0; i < display.length; i++) {
-                //     if (display[i].length < Math.pow(2, height) - 1) {
-                //         display[i] += ' '.repeat(Math.pow(2, height) - 1 - display[i].length);
-                //     }
-                // }
                 // display tree
                 for (var i = 0; i < display.length; i++) {
                     if (/\S/.test(display[i])) {
@@ -247,7 +239,7 @@
                 // if currentNode is the largest then _getNextLargest will return null
                 while (currentNode instanceof Node && currentNode.getKey() <= keyTo) {
                     // currentNode's key can be smaller than keyFrom
-                    // because we might not have an exact _getSelfOrParent
+                    // because we might not have an exact hit
                     if (currentNode.getKey() >= keyFrom) {
                         inRange.push(currentNode.getKey());
                     }
@@ -372,6 +364,20 @@
                 return nodes;
             },
 
+            join: function (leftTree, rightTree) {
+                var newRoot = leftTree._getSelfOrParent(Number.MAX_SAFE_INTEGER, leftTree._getRoot());
+                leftTree.delete(newRoot.getKey());
+                this._joinWithRoot(leftTree, rightTree, newRoot);
+            },
+
+            split: function () {
+                //@todo
+            },
+
+            _getRoot: function () {
+                return this.root;
+            },
+
             _setRoot: function (node) {
                 this.root = node;
                 if (node instanceof Node) {
@@ -412,6 +418,14 @@
                 return node.getKey() < node.getParent().getKey()
                     ? node.getParent()
                     : this._rightAncestor(node.getParent());
+            },
+
+            _joinWithRoot: function (leftTree, rightTree, root) {
+                root.setLeftChild(leftTree._getRoot());
+                root.setRightChild(rightTree._getRoot());
+                leftTree._getRoot().setParent(root);
+                rightTree._getRoot().setParent(root);
+                this._setRoot(root);
             }
         };
 
@@ -443,6 +457,7 @@
             var bst = new BST();
             bst.insertFromArray(shuffle(a));
             bst.visualize();
+            console.log('----');
             sleep.usleep(500000);
         }
     }
@@ -451,16 +466,17 @@
 
     //haveSomeFun();
 
-
     var bst = new BST();
+    bst.insertFromArray([4,2,6,1,3,5]);
+    var bst2 = new BST();
+    bst2.insertFromArray([8,9]);
 
-    //bst.insertFromArray([1, 2, 3, 4, 5, 6, 7]);
-    bst.insertFromArray([2, 1, 4, 3, 10, 9, 5, 7, 6, 8, 12, 11, 13]);
-    //bst.insert(1);
-    bst.visualize(); console.log('----');
 
-    bst.delete(4); bst.visualize(); console.log('----');
-    //bst.delete(2); bst.visualize(); console.log('----');
-    //bst.delete(1); bst.visualize(); console.log('----');
+    bst.visualize();
+    bst2.visualize();
+
+    bst.join(bst, bst2);
+    bst.visualize();
+
 
 })();

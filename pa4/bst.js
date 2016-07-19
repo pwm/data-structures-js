@@ -420,6 +420,69 @@
                     : this._rightAncestor(node.getParent());
             },
 
+            _splay: function (node) {
+                function isLeftChild(node) {
+                    return node.getParent().getLeftChild() instanceof Node &&
+                        node.getParent().getLeftChild().getKey() === node.getKey();
+                }
+
+                function isRightChild(node) {
+                    return node.getParent().getRightChild() instanceof Node &&
+                        node.getParent().getRightChild().getKey() === node.getKey();
+                }
+
+                if (node.getParent() === null) {
+                    return;
+                }
+
+                // Node doesn't have a grand-parent, so we left rotate if it's the right child
+                // of its parent and left rotate if it's the left child of its parent.
+                if (node.getParent().getParent() === null) {
+                    isLeftChild(node) ? this._rightRotation(node) : this._leftRotation(node);
+                    return;
+                }
+
+                // Node has grand-parent, decide which of the 4 cases are we in
+                if (isLeftChild(node) && isLeftChild(node.getParent())) {
+                    this._zigZigRightRightRotation(node);
+                } else if (isLeftChild(node) && isRightChild(node.getParent())) {
+                    this._zigZagRightLeftRotation(node);
+                } else if (isRightChild(node) && isRightChild(node.getParent())) {
+                    this._zigZigLeftLeftRotation(node);
+                } else {
+                    this._zigZagLeftRightRotation(node);
+                }
+
+                // if not yet root, splay again
+                if (node.getParent() instanceof Node) {
+                    this._splay(node);
+                }
+            },
+
+            _leftRotation: function (node) {
+                //@todo
+            },
+
+            _rightRotation: function (node) {
+                //@todo
+            },
+
+            _zigZigRightRightRotation: function (node) {
+                //@todo
+            },
+
+            _zigZigLeftLeftRotation: function (node) {
+                //@todo
+            },
+
+            _zigZagRightLeftRotation: function (node) {
+                //@todo
+            },
+
+            _zigZagLeftRightRotation: function (node) {
+                //@todo
+            },
+
             _joinWithRoot: function (leftTree, rightTree, root) {
                 root.setLeftChild(leftTree._getRoot());
                 root.setRightChild(rightTree._getRoot());

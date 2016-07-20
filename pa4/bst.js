@@ -133,6 +133,7 @@
                         console.log(display[i]);
                     }
                 }
+                console.log('--------');
             },
 
             find: function (key) {
@@ -435,52 +436,131 @@
                     return;
                 }
 
-                // Node doesn't have a grand-parent, so we left rotate if it's the right child
-                // of its parent and left rotate if it's the left child of its parent.
+                // Node has no grand-parent, so we left rotate if it's a
+                // right child or right rotate if it's a left child.
                 if (node.getParent().getParent() === null) {
                     isLeftChild(node) ? this._rightRotation(node) : this._leftRotation(node);
+                    this._setRoot(node);
+                    this.visualize();
                     return;
                 }
 
-                // Node has grand-parent, decide which of the 4 cases are we in
-                if (isLeftChild(node) && isLeftChild(node.getParent())) {
-                    this._zigZigRightRightRotation(node);
-                } else if (isLeftChild(node) && isRightChild(node.getParent())) {
-                    this._zigZagRightLeftRotation(node);
-                } else if (isRightChild(node) && isRightChild(node.getParent())) {
-                    this._zigZigLeftLeftRotation(node);
-                } else {
-                    this._zigZagLeftRightRotation(node);
+                // Node has grand-parent, so decide which of the 4 cases are we in
+                var parent = node.getParent(),
+                    grandParent = node.getParent().getParent();
+
+                if (grandParent.getParent() instanceof Node) {
+                    node.getKey() < grandParent.getParent().getKey()
+                        ? grandParent.getParent().setLeftChild(node)
+                        : grandParent.getParent().setRightChild(node);
                 }
 
-                // if not yet root, splay again
+                if (isLeftChild(node) && isLeftChild(node.getParent())) {
+                    console.log('_zigZigRightRightRotation');
+                    this._zigZigRightRightRotation(node, parent, grandParent);
+                } else if (isLeftChild(node) && isRightChild(node.getParent())) {
+                    console.log('_zigZagRightLeftRotation');
+                    this._zigZagRightLeftRotation(node, parent, grandParent);
+                } else if (isRightChild(node) && isRightChild(node.getParent())) {
+                    console.log('_zigZigLeftLeftRotation');
+                    this._zigZigLeftLeftRotation(node, parent, grandParent);
+                } else {
+                    console.log('_zigZagLeftRightRotation');
+                    this._zigZagLeftRightRotation(node, parent, grandParent);
+                }
+
+                this.visualize();
+
+                // splay till root
                 if (node.getParent() instanceof Node) {
                     this._splay(node);
+                } else {
+                    this._setRoot(node);
                 }
             },
 
             _leftRotation: function (node) {
-                //@todo
+                console.log('_leftRotation');
+                node.getParent().setRightChild(node.getLeftChild());
+                if (node.getLeftChild() instanceof Node) {
+                    node.getLeftChild().setParent(node.getParent());
+                }
+                node.getParent().setParent(node);
+                node.setLeftChild(node.getParent());
             },
 
             _rightRotation: function (node) {
-                //@todo
+                console.log('_rightRotation');
+                node.getParent().setLeftChild(node.getRightChild());
+                if (node.getRightChild() instanceof Node) {
+                    node.getRightChild().setParent(node.getParent());
+                }
+                node.getParent().setParent(node);
+                node.setRightChild(node.getParent());
             },
 
-            _zigZigRightRightRotation: function (node) {
-                //@todo
+            _zigZigRightRightRotation: function (node, parent, grandParent) {
+                if (node.getRightChild() instanceof Node) {
+                    node.getRightChild().setParent(parent);
+                }
+                if (parent.getRightChild() instanceof Node) {
+                    parent.getRightChild().setParent(grandParent);
+                }
+                node.setParent(grandParent.getParent());
+                grandParent.setParent(parent);
+                parent.setParent(node);
+                grandParent.setLeftChild(parent.getRightChild());
+                parent.setRightChild(grandParent);
+                parent.setLeftChild(node.getRightChild());
+                node.setRightChild(parent);
             },
 
-            _zigZigLeftLeftRotation: function (node) {
-                //@todo
+            _zigZigLeftLeftRotation: function (node, parent, grandParent) {
+                if (node.getLeftChild() instanceof Node) {
+                    node.getLeftChild().setParent(parent);
+                }
+                if (parent.getLeftChild() instanceof Node) {
+                    parent.getLeftChild().setParent(grandParent);
+                }
+                node.setParent(grandParent.getParent());
+                grandParent.setParent(parent);
+                parent.setParent(node);
+                grandParent.setRightChild(parent.getLeftChild());
+                parent.setLeftChild(grandParent);
+                parent.setRightChild(node.getLeftChild());
+                node.setLeftChild(parent);
             },
 
-            _zigZagRightLeftRotation: function (node) {
-                //@todo
+            _zigZagRightLeftRotation: function (node, parent, grandParent) {
+                if (node.getLeftChild() instanceof Node) {
+                    node.getLeftChild().setParent(grandParent);
+                }
+                if (node.getRightChild() instanceof Node) {
+                    node.getRightChild().setParent(parent);
+                }
+                node.setParent(grandParent.getParent());
+                grandParent.setParent(node);
+                parent.setParent(node);
+                grandParent.setRightChild(node.getLeftChild());
+                parent.setLeftChild(node.getRightChild());
+                node.setRightChild(parent);
+                node.setLeftChild(grandParent);
             },
 
-            _zigZagLeftRightRotation: function (node) {
-                //@todo
+            _zigZagLeftRightRotation: function (node, parent, grandParent) {
+                if (node.getLeftChild() instanceof Node) {
+                    node.getLeftChild().setParent(parent);
+                }
+                if (node.getRightChild() instanceof Node) {
+                    node.getRightChild().setParent(grandParent);
+                }
+                node.setParent(grandParent.getParent());
+                grandParent.setParent(node);
+                parent.setParent(node);
+                grandParent.setLeftChild(node.getRightChild());
+                parent.setRightChild(node.getLeftChild());
+                node.setLeftChild(parent);
+                node.setRightChild(grandParent);
             },
 
             _joinWithRoot: function (leftTree, rightTree, root) {
@@ -530,15 +610,13 @@
     //haveSomeFun();
 
     var bst = new BST();
-    bst.insertFromArray([4,2,6,1,3,5]);
-    var bst2 = new BST();
-    bst2.insertFromArray([8,9]);
-
-
+    //bst.insertFromArray([4,2,6,1,3,5,7]);
+    bst.insertFromArray([8,4,12,2,6,1,3,5,7,10,14,9,11,13,15]);
     bst.visualize();
-    bst2.visualize();
-
-    bst.join(bst, bst2);
+    bst._splay(bst.find(1));
+    bst._splay(bst.find(7));
+    bst._splay(bst.find(5));
+    //bst._splay(bst.find(7));
     bst.visualize();
 
 

@@ -83,7 +83,7 @@
                         this._buffer.shift();
                     }
                 }
-                // _buffer empty => we might have idle processor time left => fast forward to "now"
+                // buffer empty => we might have idle processor time left => fast forward to "now"
                 if (! this.bufferHasPackets()) {
                     this._processorTime = this._now;
                 }

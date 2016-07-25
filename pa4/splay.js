@@ -57,7 +57,7 @@
                 },
 
                 hasParent: function () {
-                    return ! this.isRoot();
+                    return this.getParent() instanceof Node;
                 },
 
                 hasLeftChild: function () {
@@ -164,32 +164,26 @@
                     }
                 }
                 console.log('--------');
+                return this;
             },
 
             find: function (key) {
-                var node = this._getSelfOrParent(key, this.root);
-                if (node.getKey() !== key) {
+                if (this.root === null) {
                     return null;
                 }
+                var node = this._getSelfOrParent(key);
                 this._splay(node);
-                return node;
-            },
-
-            insertFromArray: function (a) {
-                var aLength = a.length;
-                for (var i = 0; i < aLength; i++) {
-                    this.insert(a[i]);
-                }
+                return node.getKey() === key ? node : null;
             },
 
             insert: function (key) {
                 var newNode = new Node(key);
                 if (this.root === null) {
-                    this._setRoot(newNode);
+                    this.setRoot(newNode);
                     return;
                 }
-                var parent = this._getSelfOrParent(key, this.root);
-                if (parent.getKey() === key) {
+                var parent = this._getSelfOrParent(key);
+                if (parent.getKey() === key) { // already in the tree
                     return;
                 }
                 newNode.setParent(parent);
@@ -199,77 +193,55 @@
                 this._splay(newNode);
             },
 
+            insertFromArray: function (a) {
+                var aLength = a.length;
+                for (var i = 0; i < aLength; i++) {
+                    this.insert(a[i]);
+                }
+                return this;
+            },
+
             delete: function (key) {
-                var node = this.find(key);
-                if (node === null) {
+                if (this.root === null) {
                     return;
                 }
-                // node has no children (ie. right child is null as well) or only has right child
-                if (! node.hasLeftChild()) {
-                    if (node.isRoot()) {
-                        this._setRoot(node.getRightChild());
-                    } else {
-                        node.getKey() < node.getParent().getKey()
-                            ? node.getParent().setLeftChild(node.getRightChild())
-                            : node.getParent().setRightChild(node.getRightChild());
-                        if (node.hasRightChild()) {
-                            node.getRightChild().setParent(node.getParent());
-                        }
-                    }
-                // node has only left child
-                } else if (! node.hasRightChild()) {
-                    if (node.isRoot()) {
-                        this._setRoot(node.getLeftChild());
-                    } else {
-                        node.getKey() < node.getParent().getKey()
-                            ? node.getParent().setLeftChild(node.getLeftChild())
-                            : node.getParent().setRightChild(node.getLeftChild());
-                        node.getLeftChild().setParent(node.getParent());
-                    }
-                // node has both children
+                var node = this._getSelfOrParent(key);
+                if (node.getKey() !== key) { // not in the tree
+                    return;
+                }
+                var nextLargestNode = this._getNextLargest(node);
+                // node is the largest so after splay it won't have a
+                // right subtree so just make its left child the root
+                if (nextLargestNode === null) {
+                    this._splay(node);
+                    this.setRoot(node.getLeftChild());
+                // node is root, next largest is its right child and the right
+                // child has no left subtree as it's node's next largest, so
+                // set right child as root
                 } else {
-                    // never returns null as node is not the largest key (has right child)
-                    // this also guarantees that nextLargestNode always has a parent
-                    var nextLargestNode = this._getNextLargest(node);
-                    // node's next largest is node's right child
-                    if (node.getRightChild().getKey() === nextLargestNode.getKey()) {
-                        if (node.isRoot()) {
-                            this._setRoot(node.getRightChild());
-                        } else {
-                            node.getKey() < node.getParent().getKey()
-                                ? node.getParent().setLeftChild(node.getRightChild())
-                                : node.getParent().setRightChild(node.getRightChild());
-                            node.getRightChild().setParent(node.getParent());
-                        }
-                        node.getLeftChild().setParent(node.getRightChild());
-                        node.getRightChild().setLeftChild(node.getLeftChild());
-                    // node's next largest is in node's right subtree
-                    } else {
-                        // replace nextLargestNode with its right child
-                        nextLargestNode.getParent().setLeftChild(nextLargestNode.getRightChild());
-                        if (nextLargestNode.hasRightChild()) {
-                            nextLargestNode.getRightChild().setParent(nextLargestNode.getParent());
-                        }
-                        // replace node with nextLargestNode
-                        if (node.getKey() === this.root.getKey()) { //@todo: node.isRoot() ?
-                            this._setRoot(nextLargestNode);
-                        } else {
-                            node.getKey() < node.getParent().getKey()
-                                ? node.getParent().setLeftChild(nextLargestNode)
-                                : node.getParent().setRightChild(nextLargestNode);
-                            nextLargestNode.setParent(node.getParent());
-                        }
-                        node.getRightChild().setParent(nextLargestNode);
+                    this._splay(nextLargestNode);
+                    this._splay(node);
+                    if (node.hasLeftChild()) {
                         node.getLeftChild().setParent(nextLargestNode);
-                        nextLargestNode.setRightChild(node.getRightChild());
-                        nextLargestNode.setLeftChild(node.getLeftChild());
                     }
+                    nextLargestNode.setLeftChild(node.getLeftChild());
+                    this.setRoot(nextLargestNode);
+                }
+            },
+
+            deleteFromArray: function (a) {
+                var aLength = a.length;
+                for (var i = 0; i < aLength; i++) {
+                    this.delete(a[i]);
                 }
             },
 
             rangeSearch: function (keyFrom, keyTo) {
+                if (this.root === null) {
+                    return [];
+                }
                 var inRange = [],
-                    currentNode = this._getSelfOrParent(keyFrom, this.root);
+                    currentNode = this._getSelfOrParent(keyFrom);
                 // if currentNode is the largest then _getNextLargest will return null
                 while (currentNode instanceof Node && currentNode.getKey() <= keyTo) {
                     // currentNode's key can be smaller than keyFrom
@@ -282,21 +254,49 @@
                 return inRange;
             },
 
+            split: function (key) {
+                var leftTree = new SplayTree(),
+                    rightTree = new SplayTree();
+                if (this.root === null) {
+                    return [leftTree, rightTree];
+                }
+                var node = this._getSelfOrParent(key);
+                //@todo: do we need this check? we can split on nonexistent key
+                //if (node.getKey() !== key) { // not in the tree
+                //    return;
+                //}
+                this._splay(node);
+                if (node.hasRightChild()) {
+                    rightTree.setRoot(node.getRightChild());
+                    node.setRightChild(null);
+                }
+                leftTree.setRoot(node);
+                return [leftTree, rightTree];
+            },
+
             join: function (leftTree, rightTree) {
-                var newRoot = leftTree._getSelfOrParent(Number.MAX_SAFE_INTEGER, leftTree._getRoot());
-                leftTree.delete(newRoot.getKey());
-                this._joinWithRoot(leftTree, rightTree, newRoot);
+                if (leftTree.getRoot() === null && rightTree.getRoot() === null) {
+                    return null;
+                }
+                if (leftTree.getRoot() === null) {
+                    return rightTree;
+                }
+                if (rightTree.getRoot() === null) {
+                    return leftTree;
+                }
+                var newRoot = leftTree._getSelfOrParent(Number.MAX_SAFE_INTEGER, leftTree.getRoot());
+                leftTree._splay(newRoot);
+                newRoot.setRightChild(rightTree.getRoot());
+                rightTree.getRoot().setParent(newRoot);
+                this.setRoot(newRoot);
+                return this;
             },
 
-            split: function () {
-                //@todo
-            },
-
-            _getRoot: function () {
+            getRoot: function () {
                 return this.root;
             },
 
-            _setRoot: function (node) {
+            setRoot: function (node) {
                 this.root = node;
                 if (node instanceof Node) {
                     node.setParent(null);
@@ -304,6 +304,7 @@
             },
 
             _getSelfOrParent: function (key, node) {
+                node = typeof node !== 'undefined' ? node : this.root;
                 if (node.getKey() === key) {
                     return node;
                 }
@@ -319,6 +320,12 @@
                 }
             },
 
+            _getNextSmallest: function (node) {
+                return node.hasLeftChild()
+                    ? this._rightDescendant(node.getLeftChild())
+                    : this._leftAncestor(node);
+            },
+
             _getNextLargest: function (node) {
                 return node.hasRightChild()
                     ? this._leftDescendant(node.getRightChild())
@@ -329,6 +336,21 @@
                 return node.hasLeftChild()
                     ? this._leftDescendant(node.getLeftChild())
                     : node;
+            },
+
+            _rightDescendant: function (node) {
+                return node.hasRightChild()
+                    ? this._rightDescendant(node.getRightChild())
+                    : node;
+            },
+
+            _leftAncestor: function (node) {
+                if (node.isRoot()) {
+                    return null;
+                }
+                return node.getKey() > node.getParent().getKey()
+                    ? node.getParent()
+                    : this._leftAncestor(node.getParent());
             },
 
             _rightAncestor: function (node) {
@@ -349,57 +371,61 @@
                 // right child or right rotate if it's a left child.
                 if (! node.getParent().hasParent()) {
                     node.isLeftChild() ? this._rightRotation(node) : this._leftRotation(node);
-                    this._setRoot(node);
+                    this.setRoot(node);
                     return;
                 }
 
-                // Node has grand-parent
-                var parent = node.getParent(),
-                    grandParent = node.getParent().getParent();
+                var greatGrandParent = node.getParent().getParent().hasParent()
+                    ? node.getParent().getParent().getParent()
+                    : null;
 
-                // node has great-grand-parent
-                if (grandParent.hasParent()) {
-                    node.getKey() < grandParent.getParent().getKey()
-                        ? grandParent.getParent().setLeftChild(node)
-                        : grandParent.getParent().setRightChild(node);
+                // there are 4 type of rotations that we need to choose from
+                if (node.isLeftChild() && node.getParent().isLeftChild()) {
+                    this._zigZigRightRightRotation(node);
+                } else if (node.isLeftChild() && node.getParent().isRightChild()) {
+                    this._zigZagRightLeftRotation(node);
+                } else if (node.isRightChild() && node.getParent().isRightChild()) {
+                    this._zigZigLeftLeftRotation(node);
+                } else {
+                    this._zigZagLeftRightRotation(node);
                 }
 
-                // Decide which of the 4 cases are we in
-                if (node.isLeftChild() && node.getParent().isLeftChild()) {
-                    this._zigZigRightRightRotation(node, parent, grandParent);
-                } else if (node.isLeftChild() && node.getParent().isRightChild()) {
-                    this._zigZagRightLeftRotation(node, parent, grandParent);
-                } else if (node.isRightChild() && node.getParent().isRightChild()) {
-                    this._zigZigLeftLeftRotation(node, parent, grandParent);
-                } else {
-                    this._zigZagLeftRightRotation(node, parent, grandParent);
+                // connect back to the rest of the tree
+                if (greatGrandParent instanceof Node) {
+                    node.getKey() < greatGrandParent.getKey()
+                        ? greatGrandParent.setLeftChild(node)
+                        : greatGrandParent.setRightChild(node);
                 }
 
                 // splay till node becomes root
                 node.hasParent()
                     ? this._splay(node)
-                    : this._setRoot(node);
+                    : this.setRoot(node);
             },
 
             _leftRotation: function (node) {
-                node.getParent().setRightChild(node.getLeftChild());
+                var parent = node.getParent();
+                parent.setRightChild(node.getLeftChild());
                 if (node.hasLeftChild()) {
-                    node.getLeftChild().setParent(node.getParent());
+                    node.getLeftChild().setParent(parent);
                 }
-                node.getParent().setParent(node);
-                node.setLeftChild(node.getParent());
+                parent.setParent(node);
+                node.setLeftChild(parent);
             },
 
             _rightRotation: function (node) {
-                node.getParent().setLeftChild(node.getRightChild());
+                var parent = node.getParent();
+                parent.setLeftChild(node.getRightChild());
                 if (node.hasRightChild()) {
-                    node.getRightChild().setParent(node.getParent());
+                    node.getRightChild().setParent(parent);
                 }
-                node.getParent().setParent(node);
-                node.setRightChild(node.getParent());
+                parent.setParent(node);
+                node.setRightChild(parent);
             },
 
-            _zigZigRightRightRotation: function (node, parent, grandParent) {
+            _zigZigRightRightRotation: function (node) {
+                var parent = node.getParent(),
+                    grandParent = node.getParent().getParent();
                 if (node.hasRightChild()) {
                     node.getRightChild().setParent(parent);
                 }
@@ -415,7 +441,9 @@
                 node.setRightChild(parent);
             },
 
-            _zigZigLeftLeftRotation: function (node, parent, grandParent) {
+            _zigZigLeftLeftRotation: function (node) {
+                var parent = node.getParent(),
+                    grandParent = node.getParent().getParent();
                 if (node.hasLeftChild()) {
                     node.getLeftChild().setParent(parent);
                 }
@@ -431,7 +459,9 @@
                 node.setLeftChild(parent);
             },
 
-            _zigZagRightLeftRotation: function (node, parent, grandParent) {
+            _zigZagRightLeftRotation: function (node) {
+                var parent = node.getParent(),
+                    grandParent = node.getParent().getParent();
                 if (node.hasLeftChild()) {
                     node.getLeftChild().setParent(grandParent);
                 }
@@ -447,7 +477,9 @@
                 node.setLeftChild(grandParent);
             },
 
-            _zigZagLeftRightRotation: function (node, parent, grandParent) {
+            _zigZagLeftRightRotation: function (node) {
+                var parent = node.getParent(),
+                    grandParent = node.getParent().getParent();
                 if (node.hasLeftChild()) {
                     node.getLeftChild().setParent(parent);
                 }
@@ -461,14 +493,6 @@
                 parent.setRightChild(node.getLeftChild());
                 node.setLeftChild(parent);
                 node.setRightChild(grandParent);
-            },
-
-            _joinWithRoot: function (leftTree, rightTree, root) {
-                root.setLeftChild(leftTree._getRoot());
-                root.setRightChild(rightTree._getRoot());
-                leftTree._getRoot().setParent(root);
-                rightTree._getRoot().setParent(root);
-                this._setRoot(root);
             }
         };
 
@@ -477,15 +501,81 @@
 
     ////////////////////////////////
 
+    var st = new SplayTree();
+    st.insertFromArray([4,2,1,3,6,5,7]);
+    st.find(4);
+    st.visualize();
 
-    var splayTree = new SplayTree();
-    splayTree.insertFromArray([8,4,12,2,6,1,3,5,7,10,14,9,11,13,15]);
-    console.log('initial:'); splayTree.visualize();
-    splayTree.insert(16);
-    console.log('after insert:'); splayTree.visualize();
-    splayTree.find(7);
-    console.log('after find:'); splayTree.visualize();
+    console.log(st._getNextSmallest(st._getSelfOrParent(1)).getKey());
 
+    process.exit();
+
+
+    var splitFrom = 2, splitTo = 6;
+    var tmp = st.split(1);
+    var left = tmp[0];
+    var middle = tmp[1];
+
+    left.visualize();
+    middle.visualize();
+
+
+    tmp = middle.split(splitTo);
+    middle = tmp[0];
+    var right = tmp[1];
+
+    middle.visualize();
+
+    left.join(left, middle);
+    left.join(left, right);
+    left.visualize();
+
+    process.exit();
+
+
+
+
+    // empty tests
+    console.log((new SplayTree()).find(3));
+    (new SplayTree()).delete(3);
+    console.log((new SplayTree()).rangeSearch(4,7));
+    console.log((new SplayTree()).split(3));
+    console.log((new SplayTree()).join(new SplayTree(), new SplayTree()));
+
+    var st = new SplayTree();
+    //st.insertFromArray([8,4,12,2,6,1,3,5,7,10,14,9,11,13,15]);
+    st.insertFromArray([4,2,1,3,6,5,7]);
+    st.visualize();
+    st.find(6);
+    st.find(5);
+    st.visualize();
+    st.deleteFromArray([4,7]);
+    st.visualize();
+    console.log(st.rangeSearch(4,7));
+
+
+    var stL = (new SplayTree()).insertFromArray([4,2,3,1,5]);
+    var stR = (new SplayTree()).insertFromArray([8,7,6,9,10]);
+    stL.visualize();
+    stR.visualize();
+    (new SplayTree()).join(stL, new SplayTree()).visualize();
+    (new SplayTree()).join(new SplayTree(), stR).visualize();
+    var stj = (new SplayTree()).join(stL, stR).visualize();
+    stj.delete(7);
+    stj.visualize();
+
+    var trees = stj.split(5);
+    trees[0].visualize();
+    trees[1].visualize();
+    trees[0].find(3);
+    trees[1].find(9);
+    trees[0].visualize();
+    trees[1].visualize();
+    var newTree = (new SplayTree()).join(trees[0], trees[1]);
+    newTree.visualize();
+    newTree.deleteFromArray([6,4,5]);
+    newTree.visualize();
+    console.log(newTree.rangeSearch(2,8));
 
 
 })();

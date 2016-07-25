@@ -1,13 +1,14 @@
 (function () { 'use strict';
 
     var Processor = (function () {
-        function Processor(bufferSize) {
-            this.bufferSize = parseInt(bufferSize);
-            this.buffer = [];
+        function Processor(maxBufferSize) {
             this.startTimes = [];
-            this._time = 0;
+            this._buffer = [];
+            this._maxBufferSize = parseInt(maxBufferSize);
+            this._now = 0;
             this._processorTime = 0;
-            this.counter = -1;
+            this._packetCounter = -1;
+            this._droppedMarker = -1;
         }
 
         var Packet = (function () {
@@ -35,80 +36,77 @@
             constructor: Processor,
 
             accept: function (arrivalTime, processingTime) {
-                // process previous packets in buffer
-                this.process(null);
+                var incomingPacket = new Packet(++this._packetCounter, arrivalTime, processingTime);
+                this._now = incomingPacket.getArrivalTime();
 
-                var incomingPacket = new Packet(++this.counter, arrivalTime, processingTime);
-
-                // real time when current packet arrives
-                this._time = incomingPacket.getArrivalTime();
-                // there were no incoming packet for a while => idle processor time => adjust
-                if (this.isBufferEmpty() && this._processorTime < this._time) {
-                    this._processorTime = this._time;
+                // try saving incomingPacket to buffer if there is space
+                if (this.bufferHasSpace()) {
+                    this._buffer.push(incomingPacket);
                 }
 
-                // try saving incomingPacket to buffer if there is space (and it's not in buffer?)
-                if (this.buffer.length < this.bufferSize) {
-                    this.buffer.push(incomingPacket);
-                }
-
-                // process packets
+                // process packets till we reach "now"
                 this.process(incomingPacket);
 
-                if (! this.isProcessedPacket(incomingPacket)) {
-                    // not processed and not in buffer
-                    if (! this.isLastAddedPacket(incomingPacket)) {
-                        // space opened up => add to buffer
-                        if (this.buffer.length < this.bufferSize) {
-                            this.buffer.push(incomingPacket);
-                        // no space => drop packet
-                        } else {
-                            this.startTimes[incomingPacket.getId()] = - 1;
-                        }
+                // try saving incomingPacket again
+                if (! this.isPacketAlreadyProcessed(incomingPacket) && ! this.isLastAddedPacket(incomingPacket)) {
+                    if (this.bufferHasSpace()) { // space opened up
+                        this._buffer.push(incomingPacket);
+                    } else { // still no space
+                        this.dropPacket(incomingPacket);
                     }
                 }
-
-                // process packets
-                //this.process(null);
             },
 
             processRemaining: function () {
-                // make sure that this is past everything
-                this._time = 100000000;
-                this.process(null);
+                do {
+                    this._now += 100000;
+                    this.process();
+                } while (this.bufferHasPackets());
             },
 
             process: function (incomingPacket) {
-                while (! this.isBufferEmpty() && this._processorTime <= this._time) {
-                    var currentPacket = this.getCurrentPacket();
-
-                    if (this.startTimes[currentPacket.getId()] === undefined) {
-                        // processing new packet => idle processor time => adjust
-                        if (this.buffer.length === 1 && incomingPacket === currentPacket && this._processorTime < this._time) {
-                            this._processorTime = this._time;
+                while (this.bufferHasPackets() && this._processorTime <= this._now) {
+                    var packetToProcess = this.getCurrentPacket();
+                    // new packet the processor about to start working on
+                    if (! this.isPacketBeingProcessed(packetToProcess)) {
+                        // new packet arrived after some idle processor time => fast forward to "now"
+                        if (incomingPacket instanceof Packet && this.isCurrentPacket(incomingPacket) && this._processorTime < this._now) {
+                            this._processorTime = this._now;
                         }
-                        this.startTimes[currentPacket.getId()] = this._processorTime;
-                        // next available processor time
-                        this._processorTime += currentPacket.getProcessingTime();
+                        // start working on packet
+                        this.startTimes[packetToProcess.getId()] = this._processorTime;
+                        // when the processor is next available
+                        this._processorTime += packetToProcess.getProcessingTime();
                     }
-
-                    // packet processed => remove from buffer
-                    if (this._processorTime <= this._time) {
-                        this.buffer.shift();
+                    // packet has been processed => remove it from the _buffer
+                    if (this._processorTime <= this._now) {
+                        this._buffer.shift();
                     }
                 }
-                // buffer got empty => idle processor time => adjust
-                if (this._processorTime < this._time) {
-                    this._processorTime = this._time;
+                // _buffer empty => we might have idle processor time left => fast forward to "now"
+                if (! this.bufferHasPackets()) {
+                    this._processorTime = this._now;
                 }
             },
 
-            isBufferEmpty: function () {
-                return this.buffer.length === 0;
+            bufferHasPackets: function () {
+                return this._buffer.length > 0;
             },
 
-            isProcessedPacket: function (packet) {
-                return this.startTimes[packet.getId()] !== undefined && this.getCurrentPacket() !== packet;
+            bufferHasSpace: function () {
+                return this._buffer.length < this._maxBufferSize;
+            },
+
+            isCurrentPacket: function (packet) {
+                return packet === this.getCurrentPacket();
+            },
+
+            isPacketBeingProcessed: function (packet) {
+                return this.isCurrentPacket(packet) && this.startTimes[packet.getId()] !== undefined;
+            },
+
+            isPacketAlreadyProcessed: function (packet) {
+                return ! this.isCurrentPacket(packet) && this.startTimes[packet.getId()] !== undefined;
             },
 
             isLastAddedPacket: function (packet) {
@@ -116,11 +114,15 @@
             },
 
             getCurrentPacket: function () {
-                return this.buffer.length > 0 ? this.buffer[0] : null;
+                return this.bufferHasPackets() ? this._buffer[0] : null;
             },
 
             getLastAddedPacket: function () {
-                return this.buffer.length > 0 ? this.buffer[this.buffer.length - 1] : null;
+                return this.bufferHasPackets() ? this._buffer[this._buffer.length - 1] : null;
+            },
+
+            dropPacket: function (packet) {
+                this.startTimes[packet.getId()] = this._droppedMarker;
             }
         };
 
@@ -134,19 +136,16 @@
     var data = fs.readFileSync(input, 'utf8');
 
     var lines = data.match(/[^\r\n]+/g);
-    var bufferSize = lines[0].split(' ')[0];
+    var maxBufferSize = lines[0].split(' ')[0];
     var numberOfPackets = lines[0].split(' ')[1];
     lines.shift();
 
-    var processor = new Processor(bufferSize);
-
+    var processor = new Processor(maxBufferSize);
     for (var i = 0; i < numberOfPackets; i++) {
         var arrivalTime = lines[i].split(' ')[0];
         var processingTime = lines[i].split(' ')[1];
-        // accept incoming packets and process
         processor.accept(arrivalTime, processingTime);
     }
-    // process remaining packets
     processor.processRemaining();
 
     for (var j = 0; j < processor.startTimes.length; j++) {

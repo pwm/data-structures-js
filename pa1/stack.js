@@ -66,6 +66,7 @@
                 }
                 var topNode = this.top;
                 this.top = this.top.getNext();
+                this.size--;
                 return topNode.getKey();
             },
 

@@ -72,6 +72,7 @@
                 }
                 var frontNode = this.front;
                 this.front = this.front.getNext();
+                this.size--;
                 return frontNode.getKey();
             },
 

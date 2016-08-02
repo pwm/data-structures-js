@@ -84,10 +84,6 @@
 
             // Public methods
 
-            getSwaps: function () {
-                return this.swaps;
-            },
-
             insert: function (element) {
                 if (this.size === this.maxSize) {
                     throw new RangeError('MinHeap overflow.');

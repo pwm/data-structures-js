@@ -1,6 +1,6 @@
 'use strict';
 
-const MinHeap = (() => {
+const Heap = (() => {
     const TYPE_MAX = 'max';
     const TYPE_MIN = 'min';
     const TYPES = [
@@ -8,7 +8,7 @@ const MinHeap = (() => {
         TYPE_MIN
     ];
 
-    class MinHeap {
+    class Heap {
         constructor(type, getPriorityFn, setPriorityFn) {
             if (! TYPES.includes(type)) {
                 throw Error('Invalid type.');
@@ -17,6 +17,7 @@ const MinHeap = (() => {
 
             this.array = [];
             this.size = 0;
+            this.nodeMap = new Map();
             this.getPriority = typeof getPriorityFn === 'function'
                 ? getPriorityFn
                 : x => x;
@@ -28,6 +29,8 @@ const MinHeap = (() => {
         build(a) {
             this.array = a;
             this.size = a.length;
+            a.forEach((node, key) => this.nodeMap.set(node.id, key));
+            // start siftDown from non-leaf nodes
             for (let key = Math.floor((this.size - 1) / 2); key >= 0; key--) {
                 this._siftDown(key);
             }
@@ -35,6 +38,7 @@ const MinHeap = (() => {
 
         insert(node) {
             this.array[this.size] = node;
+            this.nodeMap.set(node.id, this.size);
             this._siftUp(this.size);
             this.size++;
         }
@@ -54,42 +58,51 @@ const MinHeap = (() => {
             this.size--;
             this._siftDown(0); // sift down copied last to its place
             this.array.pop(); // remove copied last from top
+            this.nodeMap.delete(min.id); // remove it from nodeMap too
             return min;
         }
 
-        changePriority(key, nodeWithNewPriority) {
+        changePriority(nodeId, newPriority) {
+            const key = this.nodeMap.get(nodeId);
+            if (key === undefined) {
+                return;
+            }
             const currentPriority = this.getPriority(this.array[key]);
-            this.array[key] = nodeWithNewPriority;
-            this.getPriority(nodeWithNewPriority) < currentPriority
+            this.setPriority(this.array[key], newPriority);
+            newPriority < currentPriority
                 ? this._siftUp(key)
                 : this._siftDown(key);
         }
 
-        removeNode(key) {
+        removeNode(nodeId) {
+            const key = this.nodeMap.get(nodeId);
+            if (key === undefined) {
+                return;
+            }
             this.setPriority(this.array[key], Number.MIN_SAFE_INTEGER);
             this._siftUp(key);
             this.extractMin();
         }
 
         _siftUp(key) {
-            while (key > 0 && this.getPriority(this.array[MinHeap._getParent(key)]) > this.getPriority(this.array[key])) {
-                MinHeap._swap(this.array, MinHeap._getParent(key), key);
-                key = MinHeap._getParent(key);
+            while (key > 0 && this.getPriority(this.array[Heap._getParent(key)]) > this.getPriority(this.array[key])) {
+                Heap._swap(Heap._getParent(key), key, this.array, this.nodeMap);
+                key = Heap._getParent(key);
             }
         }
 
         _siftDown(key) {
             let maxKey = key;
-            let leftChild = MinHeap._getLeftChild(key);
+            let leftChild = Heap._getLeftChild(key);
             if (leftChild < this.size && this.getPriority(this.array[leftChild]) < this.getPriority(this.array[maxKey])) {
                 maxKey = leftChild;
             }
-            let rightChild = MinHeap._getRightChild(key);
+            let rightChild = Heap._getRightChild(key);
             if (leftChild < this.size && this.getPriority(this.array[rightChild]) < this.getPriority(this.array[maxKey])) {
                 maxKey = rightChild;
             }
             if (key !== maxKey) {
-                MinHeap._swap(this.array, key, maxKey);
+                Heap._swap(key, maxKey, this.array, this.nodeMap);
                 this._siftDown(maxKey);
             }
         }
@@ -106,17 +119,19 @@ const MinHeap = (() => {
             return key * 2 + 2;
         }
 
-        static _swap(a, x, y) {
+        static _swap(x, y, a, nodeMap) {
+            nodeMap.set(a[x].id, y);
+            nodeMap.set(a[y].id, x);
             [a[y], a[x]] = [a[x], a[y]];
         }
     }
 
-    return MinHeap;
+    return Heap;
 })();
 
 ////////////////////////////////
 
-class DisplayableMinHeap extends MinHeap {
+class DisplayableHeap extends Heap {
     constructor(type, getPriorityFn, setPriorityFn) {
         super(type, getPriorityFn, setPriorityFn);
     }
@@ -151,19 +166,18 @@ class DisplayableMinHeap extends MinHeap {
 
 ////////////////////////////////
 
-class Node {
-    constructor(priority, data) {
-        this.priority = parseInt(priority);
-        this.data = typeof data !== 'undefined' ? data : 'x';
+const Node = (() => {
+    let id = 0;
+    class Node {
+        constructor(priority, data) {
+            this.id = ++id;
+                this.priority = parseInt(priority);
+            this.data = typeof data !== 'undefined' ? data : 'x';
+        }
     }
-}
-
+    return Node;
+})();
 ////////////////////////////////
-
-//@todo: have a priority-key map to be able to access elements by priority
-//@todo: this however would not work as there can be multiple entries  with the same priority
-//@todo: maybe a map from object to key would work
-
 
 const a = [];
 a.push(new Node(1, 'S'));
@@ -172,7 +186,7 @@ for (let i = 2; i < 63; i++) {
 }
 a.push(new Node(63, 'E'));
 
-const mh = new DisplayableMinHeap(
+const mh = new DisplayableHeap(
     'min',
     node => node.priority,
     (node, newPriority) => node.priority = newPriority
@@ -181,9 +195,9 @@ const mh = new DisplayableMinHeap(
 mh.build(a);
 mh.display();
 
-mh.changePriority(0, new Node(23, 'S'));
-mh.changePriority(62, new Node(1, 'E'));
+mh.changePriority(1, 16);
+mh.changePriority(63, 1);
 mh.display();
 
-mh.removeNode(15);
+mh.removeNode(1);
 mh.display();

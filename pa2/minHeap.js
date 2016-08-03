@@ -15,8 +15,7 @@ const Heap = (() => {
             }
             this.type = type;
 
-            this.array = [];
-            this.size = 0;
+            this.a = [];
             this.nodeMap = new Map();
             this.getPriority = typeof getPriorityFn === 'function'
                 ? getPriorityFn
@@ -27,37 +26,35 @@ const Heap = (() => {
         }
 
         build(a) {
-            this.array = a;
-            this.size = a.length;
+            this.a = a;
             a.forEach((node, key) => this.nodeMap.set(node.id, key));
-            // start siftDown from non-leaf nodes
-            for (let key = Math.floor((this.size - 1) / 2); key >= 0; key--) {
+            // siftDown starting from non-leaf nodes
+            for (let key = Math.floor((this.a.length - 1) / 2); key >= 0; key--) {
                 this._siftDown(key);
             }
         }
 
         insert(node) {
-            this.array[this.size] = node;
-            this.nodeMap.set(node.id, this.size);
-            this._siftUp(this.size);
-            this.size++;
+            const newKey = this.a.length;
+            this.a[newKey] = node;
+            this.nodeMap.set(node.id, newKey);
+            this._siftUp(newKey);
         }
 
         getSize() {
-            return this.size;
+            return this.a.length;
         }
 
-        getMin() {
-            return this.array[0];
+        getRoot() {
+            return this.a[0];
         }
 
-        extractMin() {
-            const min = this.array[0];
+        extractRoot() {
+            const min = this.a[0];
             // copy last to its place, this keep the tree complete
-            this.array[0] = this.array[this.size - 1];
-            this.size--;
+            this.a[0] = this.a[this.a.length - 1];
             this._siftDown(0); // sift down copied last to its place
-            this.array.pop(); // remove copied last from top
+            this.a.pop(); // remove copied last from top
             this.nodeMap.delete(min.id); // remove it from nodeMap too
             return min;
         }
@@ -67,8 +64,8 @@ const Heap = (() => {
             if (key === undefined) {
                 return;
             }
-            const currentPriority = this.getPriority(this.array[key]);
-            this.setPriority(this.array[key], newPriority);
+            const currentPriority = this.getPriority(this.a[key]);
+            this.setPriority(this.a[key], newPriority);
             newPriority < currentPriority
                 ? this._siftUp(key)
                 : this._siftDown(key);
@@ -79,43 +76,43 @@ const Heap = (() => {
             if (key === undefined) {
                 return;
             }
-            this.setPriority(this.array[key], Number.MIN_SAFE_INTEGER);
+            this.setPriority(this.a[key], Number.MIN_SAFE_INTEGER);
             this._siftUp(key);
-            this.extractMin();
+            this.extractRoot();
         }
 
         _siftUp(key) {
-            while (key > 0 && this.getPriority(this.array[Heap._getParent(key)]) > this.getPriority(this.array[key])) {
-                Heap._swap(Heap._getParent(key), key, this.array, this.nodeMap);
-                key = Heap._getParent(key);
+            while (key > 0 && this.getPriority(this.a[Heap._getParentKey(key)]) > this.getPriority(this.a[key])) {
+                Heap._swap(Heap._getParentKey(key), key, this.a, this.nodeMap);
+                key = Heap._getParentKey(key);
             }
         }
 
         _siftDown(key) {
             let maxKey = key;
-            let leftChild = Heap._getLeftChild(key);
-            if (leftChild < this.size && this.getPriority(this.array[leftChild]) < this.getPriority(this.array[maxKey])) {
-                maxKey = leftChild;
+            let leftChildKey = Heap._getLeftChildKey(key);
+            if (leftChildKey < this.a.length && this.getPriority(this.a[leftChildKey]) < this.getPriority(this.a[maxKey])) {
+                maxKey = leftChildKey;
             }
-            let rightChild = Heap._getRightChild(key);
-            if (leftChild < this.size && this.getPriority(this.array[rightChild]) < this.getPriority(this.array[maxKey])) {
-                maxKey = rightChild;
+            let rightChildKey = Heap._getRightChildKey(key);
+            if (leftChildKey < this.a.length && this.getPriority(this.a[rightChildKey]) < this.getPriority(this.a[maxKey])) {
+                maxKey = rightChildKey;
             }
             if (key !== maxKey) {
-                Heap._swap(key, maxKey, this.array, this.nodeMap);
+                Heap._swap(key, maxKey, this.a, this.nodeMap);
                 this._siftDown(maxKey);
             }
         }
 
-        static _getParent(key) {
+        static _getParentKey(key) {
             return Math.floor((key - 1) / 2);
         }
 
-        static _getLeftChild(key) {
+        static _getLeftChildKey(key) {
             return key * 2 + 1;
         }
 
-        static _getRightChild(key) {
+        static _getRightChildKey(key) {
             return key * 2 + 2;
         }
 
@@ -140,7 +137,7 @@ class DisplayableHeap extends Heap {
         const p = [],
             d = [];
         let height = 0;
-        for (let i = 0; i < this.size; i++) {
+        for (let i = 0; i < this.a.length; i++) {
             if (i === Math.pow(2, height + 1) - 1) {
                 height++;
             }
@@ -148,9 +145,9 @@ class DisplayableHeap extends Heap {
                 p[height] = [];
                 d[height] = [];
             }
-            let currPriority = this.getPriority(this.array[i]);
+            let currPriority = this.getPriority(this.a[i]);
             p[height].push(currPriority < 10 ? ' ' + currPriority : currPriority);
-            d[height].push(this.array[i].data);
+            d[height].push(this.a[i].data);
         }
         for (let i = 0; i < p.length; i++) {
             let s = Math.pow(2, p.length - i) - 1;

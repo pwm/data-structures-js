@@ -115,7 +115,7 @@ const Heap = (() => {
                 maxKey = leftChildKey;
             }
             let rightChildKey = Heap._getRightChildKey(key);
-            if (leftChildKey < this.a.length &&
+            if (rightChildKey < this.a.length &&
                 this._priorityViolation(this.getPriority(this.a[rightChildKey]), this.getPriority(this.a[maxKey]))) {
                 maxKey = rightChildKey;
             }

@@ -110,11 +110,13 @@ const Heap = (() => {
         _siftDown(key) {
             let maxKey = key;
             let leftChildKey = Heap._getLeftChildKey(key);
-            if (leftChildKey < this.a.length && this._priorityViolation(this.getPriority(this.a[leftChildKey]), this.getPriority(this.a[maxKey]))) {
+            if (leftChildKey < this.a.length &&
+                this._priorityViolation(this.getPriority(this.a[leftChildKey]), this.getPriority(this.a[maxKey]))) {
                 maxKey = leftChildKey;
             }
             let rightChildKey = Heap._getRightChildKey(key);
-            if (leftChildKey < this.a.length && this._priorityViolation(this.getPriority(this.a[rightChildKey]), this.getPriority(this.a[maxKey]))) {
+            if (leftChildKey < this.a.length &&
+                this._priorityViolation(this.getPriority(this.a[rightChildKey]), this.getPriority(this.a[maxKey]))) {
                 maxKey = rightChildKey;
             }
             if (key !== maxKey) {

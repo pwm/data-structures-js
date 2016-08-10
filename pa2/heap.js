@@ -9,16 +9,12 @@ const Heap = (() => {
     ];
 
     class Heap {
-        constructor(getPriorityFn, setPriorityFn, type = TYPE_MAX) {
-            this.setType(type);
+        constructor(type = TYPE_MAX, getPriorityFn = x => x, setPriorityFn = (e, x) => e = x) {
             this.a = [];
             this.nodeMap = new Map();
-            this.getPriority = typeof getPriorityFn === 'function'
-                ? getPriorityFn
-                : x => x;
-            this.setPriority = typeof setPriorityFn === 'function'
-                ? setPriorityFn
-                : (e, x) => e = x;
+            this.setType(type);
+            this.getPriority = getPriorityFn;
+            this.setPriority = setPriorityFn;
         }
 
         static typeMin() {
@@ -191,6 +187,11 @@ const Node = (() => {
             this.priority = parseInt(priority);
             this.data = typeof data !== 'undefined' ? data : 'x';
         }
+
+        static resetId() {
+            id = 0;
+        }
+
     }
     return Node;
 })();
@@ -211,20 +212,24 @@ for (let i = 2; i < 63; i++) {
 a1.push(new Node(63, 'E'));
 
 const maxHeap = new DisplayableHeap(
+    Heap.typeMax(),
     node => node.priority,
-    (node, newPriority) => node.priority = newPriority,
-    Heap.typeMax()
+    (node, newPriority) => node.priority = newPriority
 );
 
 maxHeap.build(a1);
 maxHeap.display();
 
+console.log('Change node 1(S) priority from 1 to 16 and node 63(E) from 63 to 1');console.log();
 maxHeap.changePriority(1, 16);
 maxHeap.changePriority(63, 1);
 maxHeap.display();
 
+console.log('Remove node 1(S)');console.log();
 maxHeap.removeNode(1);
 maxHeap.display();
+
+Node.resetId();
 
 // min heap
 console.log();
@@ -240,17 +245,19 @@ for (let i = 2; i < 63; i++) {
 a2.push(new Node(63, 'E'));
 
 const minHeap = new DisplayableHeap(
+    Heap.typeMin(),
     node => node.priority,
-    (node, newPriority) => node.priority = newPriority,
-    Heap.typeMin()
+    (node, newPriority) => node.priority = newPriority
 );
 
 minHeap.build(a2);
 minHeap.display();
 
+console.log('Change node 1(S) priority from 1 to 16 and node 63(E) from 63 to 1');console.log();
 minHeap.changePriority(1, 16);
 minHeap.changePriority(63, 1);
 minHeap.display();
 
+console.log('Remove node 1(S)');console.log();
 minHeap.removeNode(1);
 minHeap.display();

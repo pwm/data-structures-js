@@ -13,7 +13,8 @@ const Heap = (() => {
             type = TYPE_MAX,
             getIdFn = id => id,
             getPriorityFn = p => p,
-            setPriorityFn = (n, p, a, k) => a[k] = p
+            // allows client code to use 1st parameter as node
+            setPriorityFn = (_, p, a, k) => a[k] = p
         ) {
             this.a = [];
             this.nodeMap = new Map();

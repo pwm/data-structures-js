@@ -9,12 +9,8 @@ const Heap = (() => {
     ];
 
     class Heap {
-        constructor(type, getPriorityFn, setPriorityFn) {
-            if (! TYPES.includes(type)) {
-                throw Error('Invalid type.');
-            }
-            this.type = type;
-
+        constructor(getPriorityFn, setPriorityFn, type = TYPE_MAX) {
+            this.setType(type);
             this.a = [];
             this.nodeMap = new Map();
             this.getPriority = typeof getPriorityFn === 'function'
@@ -23,6 +19,21 @@ const Heap = (() => {
             this.setPriority = typeof setPriorityFn === 'function'
                 ? setPriorityFn
                 : (e, x) => e = x;
+        }
+
+        static typeMin() {
+            return TYPE_MIN;
+        }
+
+        static typeMax() {
+            return TYPE_MAX;
+        }
+
+        setType(type) {
+            if (! TYPES.includes(type)) {
+                throw Error('Invalid type.');
+            }
+            this.type = type;
         }
 
         build(a) {
@@ -66,7 +77,8 @@ const Heap = (() => {
             }
             const currentPriority = this.getPriority(this.a[key]);
             this.setPriority(this.a[key], newPriority);
-            newPriority < currentPriority
+            //@todo: min(<) or max(>)
+            newPriority > currentPriority
                 ? this._siftUp(key)
                 : this._siftDown(key);
         }
@@ -76,13 +88,17 @@ const Heap = (() => {
             if (key === undefined) {
                 return;
             }
-            this.setPriority(this.a[key], Number.MIN_SAFE_INTEGER);
+            const infPriority = this.type === TYPE_MAX
+                ? Number.MAX_SAFE_INTEGER
+                : Number.MIN_SAFE_INTEGER;
+            this.setPriority(this.a[key], infPriority);
             this._siftUp(key);
             this.extractRoot();
         }
 
         _siftUp(key) {
-            while (key > 0 && this.getPriority(this.a[Heap._getParentKey(key)]) > this.getPriority(this.a[key])) {
+            //@todo: min(>) or max(<)
+            while (key > 0 && this.getPriority(this.a[Heap._getParentKey(key)]) < this.getPriority(this.a[key])) {
                 Heap._swap(Heap._getParentKey(key), key, this.a, this.nodeMap);
                 key = Heap._getParentKey(key);
             }
@@ -91,11 +107,13 @@ const Heap = (() => {
         _siftDown(key) {
             let maxKey = key;
             let leftChildKey = Heap._getLeftChildKey(key);
-            if (leftChildKey < this.a.length && this.getPriority(this.a[leftChildKey]) < this.getPriority(this.a[maxKey])) {
+            //@todo: min(<) or max(>)
+            if (leftChildKey < this.a.length && this.getPriority(this.a[leftChildKey]) > this.getPriority(this.a[maxKey])) {
                 maxKey = leftChildKey;
             }
             let rightChildKey = Heap._getRightChildKey(key);
-            if (leftChildKey < this.a.length && this.getPriority(this.a[rightChildKey]) < this.getPriority(this.a[maxKey])) {
+            //@todo: min(<) or max(>)
+            if (leftChildKey < this.a.length && this.getPriority(this.a[rightChildKey]) > this.getPriority(this.a[maxKey])) {
                 maxKey = rightChildKey;
             }
             if (key !== maxKey) {
@@ -184,9 +202,9 @@ for (let i = 2; i < 63; i++) {
 a.push(new Node(63, 'E'));
 
 const mh = new DisplayableHeap(
-    'min',
     node => node.priority,
-    (node, newPriority) => node.priority = newPriority
+    (node, newPriority) => node.priority = newPriority,
+    Heap.typeMax()
 );
 
 mh.build(a);

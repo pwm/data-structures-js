@@ -37,7 +37,7 @@ const Heap = (() => {
         }
 
         build(a) {
-            this.a = a;
+            this.a = a.slice(0);
             a.forEach((node, key) => this.nodeMap.set(node.id, key));
             // siftDown starting from non-leaf nodes
             for (let key = Math.floor((this.a.length - 1) / 2); key >= 0; key--) {
@@ -61,13 +61,13 @@ const Heap = (() => {
         }
 
         extractRoot() {
-            const min = this.a[0];
+            const root = this.a[0];
             // copy last to its place, this keep the tree complete
             this.a[0] = this.a[this.a.length - 1];
             this._siftDown(0); // sift down copied last to its place
             this.a.pop(); // remove copied last from top
-            this.nodeMap.delete(min.id); // remove it from nodeMap too
-            return min;
+            this.nodeMap.delete(root.id); // remove it from nodeMap too
+            return root;
         }
 
         changePriority(nodeId, newPriority) {
@@ -77,8 +77,7 @@ const Heap = (() => {
             }
             const currentPriority = this.getPriority(this.a[key]);
             this.setPriority(this.a[key], newPriority);
-            //@todo: min(<) or max(>)
-            newPriority > currentPriority
+            this._priorityViolation(newPriority, currentPriority)
                 ? this._siftUp(key)
                 : this._siftDown(key);
         }
@@ -97,29 +96,32 @@ const Heap = (() => {
         }
 
         _siftUp(key) {
-            //@todo: min(>) or max(<)
-            while (key > 0 && this.getPriority(this.a[Heap._getParentKey(key)]) < this.getPriority(this.a[key])) {
+            let parentKey = Heap._getParentKey(key);
+            while (key > 0 && this._priorityViolation(this.getPriority(this.a[key]), this.getPriority(this.a[parentKey]))) {
                 Heap._swap(Heap._getParentKey(key), key, this.a, this.nodeMap);
                 key = Heap._getParentKey(key);
+                parentKey = Heap._getParentKey(key);
             }
         }
 
         _siftDown(key) {
             let maxKey = key;
             let leftChildKey = Heap._getLeftChildKey(key);
-            //@todo: min(<) or max(>)
-            if (leftChildKey < this.a.length && this.getPriority(this.a[leftChildKey]) > this.getPriority(this.a[maxKey])) {
+            if (leftChildKey < this.a.length && this._priorityViolation(this.getPriority(this.a[leftChildKey]), this.getPriority(this.a[maxKey]))) {
                 maxKey = leftChildKey;
             }
             let rightChildKey = Heap._getRightChildKey(key);
-            //@todo: min(<) or max(>)
-            if (leftChildKey < this.a.length && this.getPriority(this.a[rightChildKey]) > this.getPriority(this.a[maxKey])) {
+            if (leftChildKey < this.a.length && this._priorityViolation(this.getPriority(this.a[rightChildKey]), this.getPriority(this.a[maxKey]))) {
                 maxKey = rightChildKey;
             }
             if (key !== maxKey) {
                 Heap._swap(key, maxKey, this.a, this.nodeMap);
                 this._siftDown(maxKey);
             }
+        }
+
+        _priorityViolation(a, b) {
+            return this.type === TYPE_MAX ? a > b : a < b;
         }
 
         static _getParentKey(key) {
@@ -186,33 +188,69 @@ const Node = (() => {
     class Node {
         constructor(priority, data) {
             this.id = ++id;
-                this.priority = parseInt(priority);
+            this.priority = parseInt(priority);
             this.data = typeof data !== 'undefined' ? data : 'x';
         }
     }
     return Node;
 })();
+
 ////////////////////////////////
 
-const a = [];
-a.push(new Node(1, 'S'));
-for (let i = 2; i < 63; i++) {
-    a.push(new Node(i));
-}
-a.push(new Node(63, 'E'));
+// max heap
+console.log();
+console.log('------------------');
+console.log('--== Max Heap ==--');
+console.log('------------------');
 
-const mh = new DisplayableHeap(
+const a1 = [];
+a1.push(new Node(1, 'S'));
+for (let i = 2; i < 63; i++) {
+    a1.push(new Node(i));
+}
+a1.push(new Node(63, 'E'));
+
+const maxHeap = new DisplayableHeap(
     node => node.priority,
     (node, newPriority) => node.priority = newPriority,
     Heap.typeMax()
 );
 
-mh.build(a);
-mh.display();
+maxHeap.build(a1);
+maxHeap.display();
 
-mh.changePriority(1, 16);
-mh.changePriority(63, 1);
-mh.display();
+maxHeap.changePriority(1, 16);
+maxHeap.changePriority(63, 1);
+maxHeap.display();
 
-mh.removeNode(1);
-mh.display();
+maxHeap.removeNode(1);
+maxHeap.display();
+
+// min heap
+console.log();
+console.log('------------------');
+console.log('--== Min Heap ==--');
+console.log('------------------');
+
+const a2 = [];
+a2.push(new Node(1, 'S'));
+for (let i = 2; i < 63; i++) {
+    a2.push(new Node(i));
+}
+a2.push(new Node(63, 'E'));
+
+const minHeap = new DisplayableHeap(
+    node => node.priority,
+    (node, newPriority) => node.priority = newPriority,
+    Heap.typeMin()
+);
+
+minHeap.build(a2);
+minHeap.display();
+
+minHeap.changePriority(1, 16);
+minHeap.changePriority(63, 1);
+minHeap.display();
+
+minHeap.removeNode(1);
+minHeap.display();

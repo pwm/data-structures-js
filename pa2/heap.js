@@ -17,7 +17,7 @@ const Heap = (() => {
             setPriorityFn = (_, p, a, k) => a[k] = p
         ) {
             this.a = [];
-            this.nodeMap = new Map();
+            this.nodeIdKeyMap = new Map();
             this.setType(type);
             this.getId = getIdFn;
             this.getPriority = getPriorityFn;
@@ -41,7 +41,7 @@ const Heap = (() => {
 
         build(a) {
             this.a = a.slice(0);
-            a.forEach((node, key) => this.nodeMap.set(this.getId(node), key));
+            a.forEach((node, key) => this.nodeIdKeyMap.set(this.getId(node), key));
             // siftDown starting from non-leaf nodes
             for (let key = Math.floor((this.a.length - 1) / 2); key >= 0; key--) {
                 this._siftDown(key);
@@ -51,7 +51,7 @@ const Heap = (() => {
         insert(node) {
             const newKey = this.a.length;
             this.a[newKey] = node;
-            this.nodeMap.set(this.getId(node), newKey);
+            this.nodeIdKeyMap.set(this.getId(node), newKey);
             this._siftUp(newKey);
         }
 
@@ -67,14 +67,16 @@ const Heap = (() => {
             const root = this.a[0];
             // copy last to its place, this keep the tree complete
             this.a[0] = this.a[this.a.length - 1];
+            // don't forget to update nodeIdKeyMap
+            this.nodeIdKeyMap.set(this.getId(this.a[0]), 0);
             this._siftDown(0); // sift down copied last to its place
             this.a.pop(); // remove copied last from top
-            this.nodeMap.delete(this.getId(root)); // remove it from nodeMap too
+            this.nodeIdKeyMap.delete(this.getId(root)); // remove it from nodeIdKeyMap too
             return root;
         }
 
         changePriority(nodeId, newPriority) {
-            const key = this.nodeMap.get(nodeId);
+            const key = this.nodeIdKeyMap.get(nodeId);
             if (key === undefined) {
                 return;
             }
@@ -86,7 +88,7 @@ const Heap = (() => {
         }
 
         removeNode(nodeId) {
-            const key = this.nodeMap.get(nodeId);
+            const key = this.nodeIdKeyMap.get(nodeId);
             if (key === undefined) {
                 return;
             }
@@ -130,8 +132,8 @@ const Heap = (() => {
         }
 
         _swap(x, y) {
-            this.nodeMap.set(this.getId(this.a[x]), y);
-            this.nodeMap.set(this.getId(this.a[y]), x);
+            this.nodeIdKeyMap.set(this.getId(this.a[x]), y);
+            this.nodeIdKeyMap.set(this.getId(this.a[y]), x);
             [this.a[y], this.a[x]] = [this.a[x], this.a[y]];
         }
 
